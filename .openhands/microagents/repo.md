@@ -66,6 +66,16 @@ state = conversation.state
 3. **Testing**: All functionality should be tested against a running OpenHands Agent Server instance
 4. **Documentation**: API changes should be reflected in the README.md and example code
 
+## Agent Behavior Guidelines
+
+**IMPORTANT**: The agent should NEVER start the server or browse to view the app unless the user explicitly asks for it. This includes:
+- Running development servers (e.g., `npm run dev`, `npm start`)
+- Opening browsers or navigating to application URLs
+- Starting any web servers or applications automatically
+- Viewing the running application in a browser
+
+The agent should focus on code development, testing, and documentation tasks. Only when the user specifically requests to run or view the application should the agent start servers or open browsers.
+
 ## Related Repositories
 
 - **[OpenHands/OpenHands](https://github.com/OpenHands/OpenHands)**: Core OpenHands application
@@ -81,3 +91,16 @@ This client is intended for developers who want to:
 - Develop custom frontends for the OpenHands Agent Server
 
 The client abstracts away the complexity of HTTP requests, WebSocket management, and API authentication, providing a clean, type-safe interface for all OpenHands Agent Server functionality.
+
+## Example Application
+
+The `example/` directory contains a React application built with Vite that demonstrates how to integrate the TypeScript SDK into a modern web application. This example serves as both a reference implementation and a verification tool to ensure the SDK works correctly in browser environments.
+
+The example application showcases:
+- Proper SDK integration with ES module compatibility
+- TypeScript configuration for client-side development
+- Build processes that compile the SDK before running the application
+- Import verification of all major SDK classes and enums
+- Modern React development patterns with Vite tooling
+
+This provides developers with a working template for building their own applications using the OpenHands Agent Server TypeScript Client.

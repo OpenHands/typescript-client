@@ -1,47 +1,84 @@
 # OpenHands Agent Server TypeScript Client
 
-A TypeScript client library for the OpenHands Agent Server API that mirrors the structure and functionality of the Python SDK.
+> ⚠️ **ALPHA SOFTWARE WARNING** ⚠️
+> 
+> This TypeScript SDK is currently in **alpha** and is **not stable**. The API may change significantly between versions without notice. This software is intended for early testing and development purposes only.
+> 
+> - Breaking changes may occur in any release
+> - Features may be incomplete or contain bugs
+> - Documentation may be outdated or incomplete
+> - Not recommended for production use
+> 
+> Please use with caution and expect frequent updates.
 
-## Features
+A TypeScript client library for the OpenHands Agent Server API. Mirrors the structure and functionality of the Python [OpenHands Software Agent SDK](https://github.com/OpenHands/software-agent-sdk),
+but only supports remote conversations.
 
-- **RemoteConversation**: Manage conversations with OpenHands agents
-- **RemoteWorkspace**: Execute commands and perform file operations remotely
-- **Real-time Events**: WebSocket support for live event streaming
-- **Type Safety**: Full TypeScript support with comprehensive type definitions
-- **Python SDK Compatibility**: Same class names and method signatures as the Python SDK
+## ✨ Browser Compatible
+
+This client is **fully browser-compatible** and works without Node.js dependencies. File operations use browser-native APIs like `Blob`, `File`, and `FormData` instead of file system operations. Perfect for web applications, React apps, and other browser-based projects.
 
 ## Installation
 
+This package is published to GitHub Packages. You have two installation options:
+
+### Option 1: Configure .npmrc (Recommended)
+Add this to your `.npmrc` file:
+```
+@openhands:registry=https://npm.pkg.github.com
+```
+
+Then install normally:
 ```bash
-npm install @openhands/agent-server-typescript-client
+npm install @openhands/typescript-client
+```
+
+### Option 2: Direct install with registry flag
+```bash
+npm install @openhands/typescript-client --registry=https://npm.pkg.github.com
 ```
 
 ## Quick Start
 
+### Start an AgentServer
+You'll need an AgentServer running somewhere for the client to connect to. You can run one in docker:
+```bash
+docker run -p 8000:8000 -p 8001:8001 \
+  -e OH_ENABLE_VNC=false \
+  -e SESSION_API_KEY="$SESSION_API_KEY" \
+  -e OH_ALLOW_CORS_ORIGINS='["*"]' \
+  ghcr.io/all-hands-ai/agent-server:78938ee-python
+```
+
 ### Creating a Conversation
 
 ```typescript
-import { RemoteConversation, AgentBase } from '@openhands/agent-server-typescript-client';
+import { Conversation, Agent, Workspace } from '@openhands/typescript-client';
 
-const agent: AgentBase = {
-  name: 'CodeActAgent',
+const agent = new Agent({
   llm: {
     model: 'gpt-4',
     api_key: 'your-openai-api-key'
   }
-};
+});
 
-const conversation = await RemoteConversation.create(
-  'http://localhost:3000', // Agent server URL
-  agent,
-  {
-    apiKey: 'your-session-api-key',
-    initialMessage: 'Hello, can you help me write some code?',
-    callback: (event) => {
-      console.log('Received event:', event);
-    }
+// Create a remote workspace
+const workspace = new Workspace({
+  host: 'http://localhost:3000',
+  workingDir: '/tmp',
+  apiKey: 'your-session-api-key'
+});
+
+const conversation = new Conversation(agent, workspace, {
+  callback: (event) => {
+    console.log('Received event:', event);
   }
-);
+});
+
+// Start the conversation with an initial message
+await conversation.start({
+  initialMessage: 'Hello, can you help me write some code?'
+});
 
 // Start WebSocket for real-time events
 await conversation.startWebSocketClient();
@@ -54,13 +91,19 @@ await conversation.run();
 ### Loading an Existing Conversation
 
 ```typescript
-const conversation = await RemoteConversation.load(
-  'http://localhost:3000',
-  'conversation-id-here',
-  {
-    apiKey: 'your-session-api-key'
-  }
-);
+// Create a remote workspace for the existing conversation
+const workspace = new Workspace({
+  host: 'http://localhost:3000',
+  workingDir: '/tmp',
+  apiKey: 'your-session-api-key'
+});
+
+const conversation = new Conversation(agent, workspace, {
+  conversationId: 'conversation-id-here'
+});
+
+// Connect to the existing conversation
+await conversation.start();
 ```
 
 ### Using the Workspace
@@ -120,16 +163,17 @@ await conversation.updateSecrets({
 
 ## API Reference
 
-### RemoteConversation
+### Conversation
 
-The main class for managing conversations with OpenHands agents.
+Factory function that creates conversations with OpenHands agents.
 
-#### Static Methods
+#### Constructor
 
-- `RemoteConversation.create(host, agent, options)` - Create a new conversation
-- `RemoteConversation.load(host, conversationId, options)` - Load an existing conversation
+- `new Conversation(agent, workspace, options?)` - Create a new conversation instance
 
 #### Instance Methods
+
+- `start(options?)` - Start the conversation (creates new or connects to existing)
 
 - `sendMessage(message)` - Send a message to the agent
 - `run()` - Start agent execution
@@ -222,7 +266,7 @@ The library includes comprehensive TypeScript type definitions:
 The client includes proper error handling with custom error types:
 
 ```typescript
-import { HttpError } from '@openhands/agent-server-typescript-client';
+import { HttpError } from '@openhands/typescript-client';
 
 try {
   await conversation.sendMessage('Hello');

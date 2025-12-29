@@ -27,38 +27,42 @@ import {
 } from '../models/conversation';
 
 export interface RemoteConversationOptions {
-  host: string;
   conversationId?: string;
-  apiKey?: string;
   callback?: ConversationCallbackType;
+  initialMessage?: string;
+  maxIterations?: number;
+  stuckDetection?: boolean;
 }
 
 export class RemoteConversation {
-  public readonly host: string;
-  public readonly apiKey?: string;
+  public readonly agent: AgentBase;
+  public readonly workspace: RemoteWorkspace;
   private _conversationId?: string;
   private _state?: RemoteState;
-  private _workspace?: RemoteWorkspace;
   private client: HttpClient;
   private wsClient?: WebSocketCallbackClient;
   private callback?: ConversationCallbackType;
 
-  constructor(options: RemoteConversationOptions) {
-    this.host = options.host.replace(/\/$/, '');
-    this.apiKey = options.apiKey;
-    this._conversationId = options.conversationId;
+  constructor(
+    agent: AgentBase,
+    workspace: RemoteWorkspace,
+    options: RemoteConversationOptions = {}
+  ) {
+    this.agent = agent;
+    this.workspace = workspace;
     this.callback = options.callback;
+    this._conversationId = options.conversationId;
 
     this.client = new HttpClient({
-      baseUrl: this.host,
-      apiKey: this.apiKey,
+      baseUrl: workspace.host,
+      apiKey: workspace.apiKey,
       timeout: 60000,
     });
   }
 
   get id(): ConversationID {
     if (!this._conversationId) {
-      throw new Error('Conversation ID not set. Create or load a conversation first.');
+      throw new Error('Conversation ID not set. Call start() to initialize the conversation.');
     }
     return this._conversationId;
   }
@@ -66,25 +70,49 @@ export class RemoteConversation {
   get state(): RemoteState {
     if (!this._state) {
       if (!this._conversationId) {
-        throw new Error('Conversation not initialized. Create or load a conversation first.');
+        throw new Error(
+          'Conversation not initialized. Call start() to initialize the conversation.'
+        );
       }
       this._state = new RemoteState(this.client, this._conversationId);
     }
     return this._state;
   }
 
-  get workspace(): RemoteWorkspace {
-    if (!this._workspace) {
-      throw new Error('Workspace not initialized. Create or load a conversation first.');
+  async start(
+    options: { initialMessage?: string; maxIterations?: number; stuckDetection?: boolean } = {}
+  ): Promise<void> {
+    if (this._conversationId) {
+      // Existing conversation - verify it exists
+      await this.client.get<ConversationInfo>(`/api/conversations/${this._conversationId}`);
+      return;
     }
-    return this._workspace;
+
+    // Create new conversation
+    let initialMessage: Message | undefined;
+    if (options.initialMessage) {
+      initialMessage = {
+        role: 'user',
+        content: [{ type: 'text', text: options.initialMessage }],
+      };
+    }
+
+    const request: CreateConversationRequest = {
+      agent: this.agent,
+      initial_message: initialMessage,
+      max_iterations: options.maxIterations || 50,
+      stuck_detection: options.stuckDetection ?? true,
+      workspace: { type: 'local', working_dir: this.workspace.workingDir },
+    };
+
+    const response = await this.client.post<ConversationInfo>('/api/conversations', request);
+    const conversationInfo = response.data;
+    this._conversationId = conversationInfo.id;
   }
 
   async conversationStats(): Promise<ConversationStats> {
-    const response = await this.client.get<ConversationStats>(
-      `/api/conversations/${this.id}/stats`
-    );
-    return response.data;
+    const response = await this.client.get<ConversationInfo>(`/api/conversations/${this.id}`);
+    return response.data.stats;
   }
 
   async sendMessage(message: string | Message): Promise<void> {
@@ -104,7 +132,7 @@ export class RemoteConversation {
       };
     }
 
-    await this.client.post(`/api/conversations/${this.id}/send_message`, messageContent);
+    await this.client.post(`/api/conversations/${this.id}/events`, messageContent);
   }
 
   async run(): Promise<void> {
@@ -116,12 +144,12 @@ export class RemoteConversation {
   }
 
   async setConfirmationPolicy(policy: ConfirmationPolicyBase): Promise<void> {
-    await this.client.post(`/api/conversations/${this.id}/set_confirmation_policy`, policy);
+    await this.client.post(`/api/conversations/${this.id}/confirmation_policy`, policy);
   }
 
   async sendConfirmationResponse(accept: boolean, reason?: string): Promise<void> {
     const request: ConfirmationResponseRequest = { accept, reason };
-    await this.client.post(`/api/conversations/${this.id}/send_confirmation_response`, request);
+    await this.client.post(`/api/conversations/${this.id}/events/respond_to_confirmation`, request);
   }
 
   async generateTitle(maxLength: number = 50, llm?: any): Promise<string> {
@@ -145,7 +173,7 @@ export class RemoteConversation {
     }
 
     const request: UpdateSecretsRequest = { secrets: secretStrings };
-    await this.client.post(`/api/conversations/${this.id}/update_secrets`, request);
+    await this.client.post(`/api/conversations/${this.id}/secrets`, request);
   }
 
   async startWebSocketClient(): Promise<void> {
@@ -171,10 +199,10 @@ export class RemoteConversation {
     };
 
     this.wsClient = new WebSocketCallbackClient({
-      host: this.host,
+      host: this.workspace.host,
       conversationId: this.id,
       callback: combinedCallback,
-      apiKey: this.apiKey,
+      apiKey: this.workspace.apiKey,
     });
 
     this.wsClient.start();
@@ -187,89 +215,9 @@ export class RemoteConversation {
     }
   }
 
-  // Static factory methods
-  static async create(
-    host: string,
-    agent: AgentBase,
-    options: {
-      apiKey?: string;
-      initialMessage?: string;
-      maxIterations?: number;
-      stuckDetection?: boolean;
-      workspace?: any;
-      callback?: ConversationCallbackType;
-    } = {}
-  ): Promise<RemoteConversation> {
-    const client = new HttpClient({
-      baseUrl: host.replace(/\/$/, ''),
-      apiKey: options.apiKey,
-      timeout: 60000,
-    });
-
-    const request: CreateConversationRequest = {
-      agent,
-      initial_message: options.initialMessage,
-      max_iterations: options.maxIterations || 50,
-      stuck_detection: options.stuckDetection ?? true,
-      workspace: options.workspace || { type: 'local', working_dir: '/tmp' },
-    };
-
-    const response = await client.post<ConversationInfo>('/api/conversations', request);
-    const conversationInfo = response.data;
-
-    const conversation = new RemoteConversation({
-      host,
-      conversationId: conversationInfo.id,
-      apiKey: options.apiKey,
-      callback: options.callback,
-    });
-
-    // Initialize workspace
-    conversation._workspace = new RemoteWorkspace({
-      host,
-      workingDir: conversationInfo.workspace?.working_dir || '/tmp',
-      apiKey: options.apiKey,
-    });
-
-    return conversation;
-  }
-
-  static async load(
-    host: string,
-    conversationId: string,
-    options: {
-      apiKey?: string;
-      callback?: ConversationCallbackType;
-    } = {}
-  ): Promise<RemoteConversation> {
-    const conversation = new RemoteConversation({
-      host,
-      conversationId,
-      apiKey: options.apiKey,
-      callback: options.callback,
-    });
-
-    // Verify conversation exists and get workspace info
-    const response = await conversation.client.get<ConversationInfo>(
-      `/api/conversations/${conversationId}`
-    );
-    const conversationInfo = response.data;
-
-    // Initialize workspace
-    conversation._workspace = new RemoteWorkspace({
-      host,
-      workingDir: conversationInfo.workspace?.working_dir || '/tmp',
-      apiKey: options.apiKey,
-    });
-
-    return conversation;
-  }
-
   async close(): Promise<void> {
     await this.stopWebSocketClient();
     this.client.close();
-    if (this._workspace) {
-      this._workspace.close();
-    }
+    this.workspace.close();
   }
 }
