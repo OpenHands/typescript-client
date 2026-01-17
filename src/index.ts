@@ -10,6 +10,7 @@ export { RemoteConversation } from './conversation/remote-conversation';
 export { Conversation } from './conversation/conversation';
 export { ConversationManager } from './conversation/conversation-manager';
 export { RemoteWorkspace } from './workspace/remote-workspace';
+export { CloudWorkspace } from './workspace/cloud-workspace';
 export { Workspace } from './workspace/workspace';
 export { RemoteState } from './conversation/remote-state';
 export { RemoteEventsList } from './events/remote-events-list';
@@ -83,6 +84,8 @@ export type { WebSocketClientOptions } from './events/websocket-client';
 
 export type { RemoteWorkspaceOptions } from './workspace/remote-workspace';
 
+export type { CloudWorkspaceOptions } from './workspace/cloud-workspace';
+
 export type { RemoteConversationOptions } from './conversation/remote-conversation';
 
 export type { ConversationManagerOptions } from './conversation/conversation-manager';
@@ -92,6 +95,7 @@ import { RemoteConversation } from './conversation/remote-conversation';
 import { Conversation } from './conversation/conversation';
 import { ConversationManager } from './conversation/conversation-manager';
 import { RemoteWorkspace } from './workspace/remote-workspace';
+import { CloudWorkspace } from './workspace/cloud-workspace';
 import { Workspace } from './workspace/workspace';
 import { RemoteState } from './conversation/remote-state';
 import { RemoteEventsList } from './events/remote-events-list';
@@ -106,6 +110,7 @@ export default {
   Conversation,
   ConversationManager,
   RemoteWorkspace,
+  CloudWorkspace,
   Workspace,
   RemoteState,
   RemoteEventsList,
