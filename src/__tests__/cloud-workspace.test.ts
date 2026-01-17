@@ -27,16 +27,19 @@ describe('CloudWorkspace', () => {
     mockGet = jest.fn();
     mockPost = jest.fn();
     mockRequest = jest.fn();
-    (HttpClient as jest.MockedClass<typeof HttpClient>).mockImplementation(() => ({
-      get: mockGet,
-      post: mockPost,
-      put: jest.fn(),
-      delete: jest.fn(),
-      request: mockRequest,
-      close: jest.fn(),
-      baseUrl: mockAgentServerUrl,
-      timeout: 60000,
-    } as unknown as HttpClient));
+    (HttpClient as jest.MockedClass<typeof HttpClient>).mockImplementation(
+      () =>
+        ({
+          get: mockGet,
+          post: mockPost,
+          put: jest.fn(),
+          delete: jest.fn(),
+          request: mockRequest,
+          close: jest.fn(),
+          baseUrl: mockAgentServerUrl,
+          timeout: 60000,
+        }) as unknown as HttpClient
+    );
   });
 
   describe('create', () => {
@@ -235,7 +238,11 @@ describe('CloudWorkspace', () => {
           statusText: 'OK',
         });
 
-        const result = await workspace.fileUpload('test content', '/workspace/test.txt', 'test.txt');
+        const result = await workspace.fileUpload(
+          'test content',
+          '/workspace/test.txt',
+          'test.txt'
+        );
 
         expect(result.success).toBe(true);
         expect(result.destination_path).toBe('/workspace/test.txt');
@@ -244,7 +251,11 @@ describe('CloudWorkspace', () => {
       it('should handle HTTP errors', async () => {
         mockRequest.mockRejectedValueOnce(new Error('HTTP 500: Internal Server Error'));
 
-        const result = await workspace.fileUpload('test content', '/workspace/test.txt', 'test.txt');
+        const result = await workspace.fileUpload(
+          'test content',
+          '/workspace/test.txt',
+          'test.txt'
+        );
 
         expect(result.success).toBe(false);
         expect(result.error).toContain('500');
@@ -335,6 +346,200 @@ describe('CloudWorkspace', () => {
 
         await expect(workspace.downloadAsText('/workspace/test.txt')).rejects.toThrow();
       });
+    });
+  });
+
+  describe('static resume', () => {
+    it('should resume an existing sandbox using static method', async () => {
+      // Mock sandbox resume
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({}),
+        })
+        // Mock sandbox status check
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => [
+            {
+              id: mockSandboxId,
+              status: 'RUNNING',
+              session_api_key: mockSessionApiKey,
+              exposed_urls: [{ name: 'AGENT_SERVER', url: mockAgentServerUrl }],
+            },
+          ],
+        })
+        // Mock health check
+        .mockResolvedValueOnce({
+          ok: true,
+        });
+
+      const workspace = await CloudWorkspace.resume({
+        cloudApiUrl: mockCloudApiUrl,
+        cloudApiKey: mockCloudApiKey,
+        sandboxId: mockSandboxId,
+      });
+
+      expect(workspace.sandboxId).toBe(mockSandboxId);
+      expect(workspace.host).toBe(mockAgentServerUrl);
+
+      await workspace.cleanup();
+    });
+  });
+
+  describe('pause', () => {
+    it('should throw error when pause is called', async () => {
+      // Setup workspace
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            id: mockSandboxId,
+            session_api_key: mockSessionApiKey,
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => [
+            {
+              id: mockSandboxId,
+              status: 'RUNNING',
+              session_api_key: mockSessionApiKey,
+              exposed_urls: [{ name: 'AGENT_SERVER', url: mockAgentServerUrl }],
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+        });
+
+      const workspace = await CloudWorkspace.create({
+        cloudApiUrl: mockCloudApiUrl,
+        cloudApiKey: mockCloudApiKey,
+      });
+
+      expect(() => workspace.pause()).toThrow('CloudWorkspace.pause() is not yet supported');
+
+      await workspace.cleanup();
+    });
+  });
+
+  describe('alive property', () => {
+    it('should return true when workspace is initialized', async () => {
+      // Setup workspace
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            id: mockSandboxId,
+            session_api_key: mockSessionApiKey,
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => [
+            {
+              id: mockSandboxId,
+              status: 'RUNNING',
+              session_api_key: mockSessionApiKey,
+              exposed_urls: [{ name: 'AGENT_SERVER', url: mockAgentServerUrl }],
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+        });
+
+      const workspace = await CloudWorkspace.create({
+        cloudApiUrl: mockCloudApiUrl,
+        cloudApiKey: mockCloudApiKey,
+      });
+
+      expect(workspace.alive).toBe(true);
+
+      await workspace.cleanup();
+    });
+  });
+
+  describe('checkHealth', () => {
+    it('should return true when agent server is healthy', async () => {
+      // Setup workspace
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            id: mockSandboxId,
+            session_api_key: mockSessionApiKey,
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => [
+            {
+              id: mockSandboxId,
+              status: 'RUNNING',
+              session_api_key: mockSessionApiKey,
+              exposed_urls: [{ name: 'AGENT_SERVER', url: mockAgentServerUrl }],
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+        });
+
+      const workspace = await CloudWorkspace.create({
+        cloudApiUrl: mockCloudApiUrl,
+        cloudApiKey: mockCloudApiKey,
+      });
+
+      // Mock health check
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+      });
+
+      const isHealthy = await workspace.checkHealth();
+      expect(isHealthy).toBe(true);
+
+      await workspace.cleanup();
+    });
+
+    it('should return false when agent server is unhealthy', async () => {
+      // Setup workspace
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            id: mockSandboxId,
+            session_api_key: mockSessionApiKey,
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => [
+            {
+              id: mockSandboxId,
+              status: 'RUNNING',
+              session_api_key: mockSessionApiKey,
+              exposed_urls: [{ name: 'AGENT_SERVER', url: mockAgentServerUrl }],
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+        });
+
+      const workspace = await CloudWorkspace.create({
+        cloudApiUrl: mockCloudApiUrl,
+        cloudApiKey: mockCloudApiKey,
+      });
+
+      // Mock health check failure
+      mockFetch.mockRejectedValueOnce(new Error('Connection refused'));
+
+      const isHealthy = await workspace.checkHealth();
+      expect(isHealthy).toBe(false);
+
+      await workspace.cleanup();
     });
   });
 

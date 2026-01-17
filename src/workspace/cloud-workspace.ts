@@ -38,7 +38,7 @@ export interface CloudWorkspaceOptions {
   cloudApiKey: string;
 
   /**
-   * Working directory inside the sandbox (default: /workspace)
+   * Working directory inside the sandbox (default: /workspace/project)
    */
   workingDir?: string;
 
@@ -128,7 +128,7 @@ export class CloudWorkspace {
   private constructor(options: CloudWorkspaceOptions) {
     this.cloudApiUrl = options.cloudApiUrl.replace(/\/$/, '');
     this.cloudApiKey = options.cloudApiKey;
-    this.workingDir = options.workingDir || '/workspace';
+    this.workingDir = options.workingDir || '/workspace/project';
     this.sandboxSpecId = options.sandboxSpecId;
     this.initTimeout = options.initTimeout || 300;
     this.apiTimeout = options.apiTimeout || 60;
@@ -147,6 +147,20 @@ export class CloudWorkspace {
    * the async initialization of the sandbox.
    */
   static async create(options: CloudWorkspaceOptions): Promise<CloudWorkspace> {
+    const workspace = new CloudWorkspace(options);
+    await workspace._initialize();
+    return workspace;
+  }
+
+  /**
+   * Resume an existing sandbox by ID.
+   *
+   * This is a convenience method that creates a CloudWorkspace with the
+   * sandboxId option set.
+   */
+  static async resume(
+    options: Omit<CloudWorkspaceOptions, 'sandboxId'> & { sandboxId: string }
+  ): Promise<CloudWorkspace> {
     const workspace = new CloudWorkspace(options);
     await workspace._initialize();
     return workspace;
@@ -177,6 +191,39 @@ export class CloudWorkspace {
    */
   get sandboxId(): string | undefined {
     return this._sandboxId;
+  }
+
+  /**
+   * Check if the remote workspace is alive by querying the health endpoint.
+   *
+   * @returns True if the health endpoint returns a successful response, false otherwise.
+   */
+  get alive(): boolean {
+    // Note: This is a synchronous getter that returns the last known state.
+    // For async health check, use checkHealth() method.
+    return this._host !== undefined && this._client !== undefined;
+  }
+
+  /**
+   * Check if the agent server is healthy (async version).
+   *
+   * @returns Promise that resolves to true if healthy, false otherwise.
+   */
+  async checkHealth(): Promise<boolean> {
+    if (!this._host) {
+      return false;
+    }
+
+    try {
+      const healthUrl = `${this._host}/health`;
+      const response = await fetch(healthUrl, {
+        method: 'GET',
+        signal: AbortSignal.timeout(5000),
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -417,7 +464,11 @@ export class CloudWorkspace {
   /**
    * Execute a bash command on the remote system.
    */
-  async executeCommand(command: string, cwd?: string, timeout: number = 30.0): Promise<CommandResult> {
+  async executeCommand(
+    command: string,
+    cwd?: string,
+    timeout: number = 30.0
+  ): Promise<CommandResult> {
     console.debug(`Executing remote command: ${command}`);
 
     try {
@@ -724,6 +775,20 @@ export class CloudWorkspace {
   // ============================================================
   // Lifecycle Management
   // ============================================================
+
+  /**
+   * Pause the sandbox to conserve resources.
+   *
+   * Note: OpenHands Cloud does not currently support pausing sandboxes.
+   * This method throws an error until the API is available.
+   *
+   * @throws Error - Cloud API pause endpoint is not yet available.
+   */
+  pause(): void {
+    throw new Error(
+      'CloudWorkspace.pause() is not yet supported - Cloud API pause endpoint not available'
+    );
+  }
 
   /**
    * Resume a paused sandbox.
