@@ -573,7 +573,9 @@ export class CloudWorkspace {
       let blob: Blob;
       let finalFileName: string;
 
-      if (content instanceof File) {
+      // Check for File first (File extends Blob, so check File before Blob)
+      // Note: File is not available in Node.js < 20, so we check if it's defined
+      if (typeof File !== 'undefined' && content instanceof File) {
         blob = content;
         finalFileName = fileName || content.name;
       } else if (content instanceof Blob) {
