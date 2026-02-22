@@ -150,7 +150,9 @@ export class HttpClient {
 
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
-          throw new Error(`Request timeout after ${options.timeout || this.timeout}ms`, { cause: error });
+          throw new Error(`Request timeout after ${options.timeout || this.timeout}ms`, {
+            cause: error,
+          });
         }
         throw new Error(`Request failed: ${error.message}`, { cause: error });
       }
