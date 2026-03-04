@@ -35,17 +35,16 @@ export class RemoteEventsList {
   private cachedEvents: Event[] = [];
   private cachedEventIds = new Set<string>();
   private lock = new AsyncLock();
-  private syncPromise: Promise<void> | null = null;
+  private syncPromise: Promise<void>;
 
   constructor(client: HttpClient, conversationId: string) {
     this.client = client;
     this.conversationId = conversationId;
+    // Perform initial sync
+    this.syncPromise = this.doFullSync();
   }
 
   async ensureSynced(): Promise<void> {
-    if (!this.syncPromise) {
-      this.syncPromise = this.doFullSync();
-    }
     await this.syncPromise;
   }
 
