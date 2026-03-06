@@ -1,0 +1,157 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  background-color: #0d0f11;
+  color: #ecedee;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+.button-base {
+  @apply bg-tertiary border border-neutral-600 rounded-sm;
+}
+
+.skeleton {
+  @apply bg-gray-400 rounded-md animate-pulse;
+}
+
+.heading {
+  @apply text-[28px] leading-8 -tracking-[0.02em] font-bold text-content-2;
+}
+
+/* Custom scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 3px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  background: rgba(208, 217, 250, 0.3);
+}
+
+.custom-scrollbar:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(208, 217, 250, 0.5);
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.custom-scrollbar:hover {
+  scrollbar-color: rgba(208, 217, 250, 0.3) transparent;
+}
+
+/* Always visible scrollbar */
+.custom-scrollbar-always::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar-always::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar-always::-webkit-scrollbar-thumb {
+  background: rgba(208, 217, 250, 0.3);
+  border-radius: 3px;
+}
+
+.custom-scrollbar-always::-webkit-scrollbar-thumb:hover {
+  background: rgba(208, 217, 250, 0.5);
+}
+
+.custom-scrollbar-always {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(208, 217, 250, 0.3) transparent;
+}
+
+/* Chat input placeholder */
+.chat-input:empty:before {
+  content: attr(data-placeholder);
+  color: #a1a1a1;
+  pointer-events: none;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.chat-input:focus {
+  outline: none;
+}
+
+.chat-input {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* XTerm styles */
+.xterm-viewport::-webkit-scrollbar {
+  width: 8px;
+}
+
+.xterm-viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.xterm-viewport::-webkit-scrollbar-thumb {
+  background: rgba(71, 74, 84, 0.5);
+  border-radius: 4px;
+}
+
+.xterm {
+  background: transparent !important;
+}
+
+.xterm-viewport {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  background: transparent !important;
+}
+
+/* Loader animation */
+.loader {
+  background: #c9b974;
+  animation: l5 1s infinite linear alternate;
+}
+
+@keyframes l5 {
+  0% {
+    box-shadow: 20px 0 #c9b974, -20px 0 rgba(201, 185, 116, 0.1);
+    background: #c9b974;
+  }
+  33% {
+    box-shadow: 20px 0 #c9b974, -20px 0 rgba(201, 185, 116, 0.1);
+    background: rgba(201, 185, 116, 0.1);
+  }
+  66% {
+    box-shadow: 20px 0 rgba(201, 185, 116, 0.1), -20px 0 #c9b974;
+    background: rgba(201, 185, 116, 0.1);
+  }
+  100% {
+    box-shadow: 20px 0 rgba(201, 185, 116, 0.1), -20px 0 #c9b974;
+    background: #c9b974;
+  }
+}
+
+/* Context menu shadow */
+.context-menu-box-shadow {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+}
