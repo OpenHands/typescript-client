@@ -26,10 +26,7 @@ export type LocalWorkspaceOptions = BaseWorkspaceOptions;
  */
 class LocalWorkspaceNotSupportedError extends Error {
   constructor(method: string) {
-    super(
-      `LocalWorkspace.${method}() is not implemented. ` +
-        `Use RemoteWorkspace instead.`
-    );
+    super(`LocalWorkspace.${method}() is not implemented. ` + `Use RemoteWorkspace instead.`);
     this.name = 'LocalWorkspaceNotSupportedError';
   }
 }
