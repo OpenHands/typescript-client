@@ -296,6 +296,18 @@ Required GitHub secrets:
 
 The agent should focus on code development, testing, and documentation tasks. Only when the user specifically requests to run or view the application should the agent start servers or open browsers.
 
+## Known Issues (from 2026-03-29 audit — see REVIEW.md / PR #78)
+
+- **`console.log` in http-client.ts:91** leaks every HTTP request body to console — remove it
+- **`npm run test:coverage` is broken** — `minimatch` override breaks `test-exclude`/istanbul; coverage is 0% on all files
+- **`src/index.ts`** has a fully redundant default export block (lines 258-336) duplicating all named exports
+- **`SecretValue` type** is defined in both `types/base.ts` and `conversation/secret-registry.ts`
+- **`TextContent`/`ImageContent`** are defined differently in `types/base.ts` vs `llm/base.ts`
+- **`riskValue()` method** is duplicated in `confirmation-policy.ts` and `security-analyzer.ts`
+- **`local-conversation.ts`** is a 957-line God class with zero unit tests
+- **`uuid` dependency** is installed but unused; hand-rolled `Math.random()` UUIDs used instead
+- **`LocalWorkspace`** is 152 lines of dead code (every method throws)
+
 ## Related Repositories
 
 - **[OpenHands/OpenHands](https://github.com/OpenHands/OpenHands)**: Core OpenHands application
