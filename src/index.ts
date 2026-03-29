@@ -116,13 +116,7 @@ export {
   mergeHookConfigs,
   hookConfigToJSON,
 } from './hooks';
-export type {
-  HookEvent,
-  HookResult,
-  HookDefinition,
-  HookMatcher,
-  HookConfig,
-} from './hooks';
+export type { HookEvent, HookResult, HookDefinition, HookMatcher, HookConfig } from './hooks';
 
 // Agent classes
 export { Agent } from './agent/agent';

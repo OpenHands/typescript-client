@@ -215,9 +215,7 @@ describe('Hooks Config', () => {
   describe('hookConfigFromData', () => {
     it('should create config from PascalCase data', () => {
       const data = {
-        PreToolUse: [
-          { matcher: 'terminal', hooks: [{ command: 'echo block', type: 'command' }] },
-        ],
+        PreToolUse: [{ matcher: 'terminal', hooks: [{ command: 'echo block', type: 'command' }] }],
         Stop: [{ matcher: '*', hooks: [{ command: 'echo stop' }] }],
       };
       const config = hookConfigFromData(data);
@@ -263,9 +261,7 @@ describe('Hooks Config', () => {
 
     it('should return empty for no matches', () => {
       const config = createEmptyHookConfig();
-      config.pre_tool_use = [
-        { matcher: 'other', hooks: [{ command: 'echo other' }] },
-      ];
+      config.pre_tool_use = [{ matcher: 'other', hooks: [{ command: 'echo other' }] }];
 
       const hooks = getHooksForEvent(config, HookEventType.PRE_TOOL_USE, 'terminal');
       expect(hooks).toHaveLength(0);

@@ -168,10 +168,9 @@ export class RemoteConversation implements IConversation {
    * @returns The hook configuration, or null if no hooks are configured.
    */
   async loadHooks(projectDir?: string): Promise<HookConfig | null> {
-    const response = await this.client.post<{ hook_config: HookConfig | null }>(
-      '/api/hooks',
-      { project_dir: projectDir ?? this.workspace.workingDir }
-    );
+    const response = await this.client.post<{ hook_config: HookConfig | null }>('/api/hooks', {
+      project_dir: projectDir ?? this.workspace.workingDir,
+    });
     return response.data.hook_config;
   }
 
@@ -183,9 +182,7 @@ export class RemoteConversation implements IConversation {
    * @returns The hook configuration, or null if no hooks are configured.
    */
   async getHookConfig(): Promise<HookConfig | null> {
-    const response = await this.client.get<ConversationInfo>(
-      `/api/conversations/${this.id}`
-    );
+    const response = await this.client.get<ConversationInfo>(`/api/conversations/${this.id}`);
     return response.data.hook_config ?? null;
   }
 

@@ -123,9 +123,7 @@ function pascalToSnake(name: string): string {
 /**
  * Normalize raw hooks data, supporting PascalCase keys and the legacy `{hooks: ...}` wrapper.
  */
-export function normalizeHooksInput(
-  data: Record<string, unknown>
-): Record<string, unknown> {
+export function normalizeHooksInput(data: Record<string, unknown>): Record<string, unknown> {
   let unwrapped = data;
 
   // Unwrap legacy format: {"hooks": {"PreToolUse": [...]}}
