@@ -30,27 +30,9 @@ function isRemoteWorkspaceOptions(options: WorkspaceOptions): options is RemoteW
 }
 
 /**
- * Workspace class that extends RemoteWorkspace for backwards compatibility.
- * Provides a cleaner API that matches the Python SDK naming.
- *
- * For new code, consider using the createWorkspace factory function
- * or directly instantiating RemoteWorkspace or LocalWorkspace.
- *
- * Usage:
- * ```typescript
- * // Legacy usage (backwards compatible)
- * const workspace = new Workspace({
- *   host: 'http://localhost:8000',
- *   workingDir: '/workspace',
- *   apiKey: 'key'
- * });
- * ```
+ * @deprecated Use `RemoteWorkspace` directly. This alias is kept for backward compatibility.
  */
-export class Workspace extends RemoteWorkspace {
-  constructor(options: RemoteWorkspaceOptions) {
-    super(options);
-  }
-}
+export const Workspace = RemoteWorkspace;
 
 /**
  * Factory function to create a workspace instance based on options.

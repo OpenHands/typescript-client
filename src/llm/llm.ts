@@ -96,19 +96,6 @@ export function createOpenRouterLLM(options: OpenRouterLLMOptions): OpenRouterLL
 }
 
 /**
- * LLM class that extends OpenRouterLLM for backwards compatibility
- * and provides a simple default LLM implementation.
- *
- * Example:
- * ```typescript
- * const llm = new LLM({
- *   apiKey: 'your-api-key',
- *   defaultModel: 'anthropic/claude-3.5-sonnet'
- * });
- * ```
+ * @deprecated Use `OpenRouterLLM` directly. This alias is kept for backward compatibility.
  */
-export class LLM extends OpenRouterLLM {
-  constructor(options: OpenRouterLLMOptions) {
-    super(options);
-  }
-}
+export const LLM = OpenRouterLLM;

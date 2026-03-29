@@ -29,28 +29,9 @@ export interface CreateConversationOptions {
 }
 
 /**
- * Conversation class that extends RemoteConversation for backwards compatibility.
- * Provides a cleaner API that matches the Python SDK naming.
- *
- * For new code, consider using the createConversation factory function
- * or directly instantiating RemoteConversation or LocalConversation.
- *
- * Usage:
- * ```typescript
- * // Legacy usage (backwards compatible)
- * const conversation = new Conversation(agent, workspace);
- * await conversation.start();
- *
- * // For existing conversations:
- * const conversation = new Conversation(agent, workspace, { conversationId: 'existing-id' });
- * await conversation.start();
- * ```
+ * @deprecated Use `RemoteConversation` directly. This alias is kept for backward compatibility.
  */
-export class Conversation extends RemoteConversation {
-  constructor(agent: AgentBase, workspace: RemoteWorkspace, options?: RemoteConversationOptions) {
-    super(agent, workspace, options);
-  }
-}
+export const Conversation = RemoteConversation;
 
 /**
  * Factory function to create a conversation instance based on options.
