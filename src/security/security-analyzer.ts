@@ -246,7 +246,6 @@ export class CompositeAnalyzer implements SecurityAnalyzer {
       concerns: allConcerns.length > 0 ? allConcerns : undefined,
     };
   }
-
 }
 
 /**
