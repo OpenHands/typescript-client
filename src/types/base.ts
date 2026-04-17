@@ -38,19 +38,18 @@ export interface ImageContent extends MessageContent {
 }
 
 export interface AgentContext {
-  skills?: any[];
+  skills?: unknown[];
   system_message_suffix?: string | null;
   user_message_suffix?: string | null;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface AgentBase {
   kind: string;
   llm: LLM;
   agent_context?: AgentContext | null;
-  // Keep name for backward compatibility
   name?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // Alias for user-facing API
@@ -60,12 +59,12 @@ export interface LLM {
   model: string;
   api_key?: string;
   base_url?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface ServerInfo {
   version: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface Success {
@@ -111,12 +110,12 @@ export interface ConversationStats {
   message_events: number;
   action_events: number;
   observation_events: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface ConfirmationPolicyBase {
   type: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface NeverConfirm extends ConfirmationPolicyBase {
