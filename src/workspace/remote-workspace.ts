@@ -137,12 +137,9 @@ export class RemoteWorkspace implements IWorkspace {
   }
 
   async fileDownload(sourcePath: string): Promise<FileDownloadResult> {
-    const response = await this.client.get(
-      `/api/file/download/${encodeURIComponent(sourcePath)}`,
-      {
-        timeout: 60000,
-      }
-    );
+    const response = await this.client.get(`/api/file/download/${encodeURIComponent(sourcePath)}`, {
+      timeout: 60000,
+    });
 
     let content: string | Blob;
     let fileSize: number;
