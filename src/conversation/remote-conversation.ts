@@ -314,9 +314,7 @@ export class RemoteConversation implements IConversation {
       // Add event to the events list
       this.state.events.addEvent(event).catch((error) => {
         reportError(
-          error instanceof Error
-            ? error
-            : new Error(`Error adding event to events list: ${error}`)
+          error instanceof Error ? error : new Error(`Error adding event to events list: ${error}`)
         );
       });
 
