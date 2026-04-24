@@ -3,6 +3,13 @@
  */
 
 import { HttpClient } from '../client/http-client';
+import { DesktopClient } from '../client/desktop-client';
+import { LLMMetadataClient } from '../client/llm-client';
+import { ServerClient } from '../client/server-client';
+import { SettingsClient } from '../client/settings-client';
+import { SkillsClient } from '../client/skills-client';
+import { ToolClient } from '../client/tool-client';
+import { VSCodeClient } from '../client/vscode-client';
 import { RemoteConversation } from './remote-conversation';
 import { RemoteWorkspace } from '../workspace/remote-workspace';
 import {
@@ -17,15 +24,61 @@ import {
 } from '../models/conversation';
 import { AgentBase, ConversationExecutionStatus, ConversationID, Success } from '../types/base';
 
+export class ACPConversationNamespace {
+  constructor(private readonly manager: ConversationManager) {}
+
+  searchConversations(
+    options: ConversationSearchRequest = {}
+  ): Promise<ACPConversationSearchResponse> {
+    return this.manager.searchACPConversations(options);
+  }
+
+  countConversations(options: { status?: ConversationExecutionStatus } = {}): Promise<number> {
+    return this.manager.countACPConversations(options);
+  }
+
+  getConversations(conversationIds: ConversationID[]): Promise<Array<ACPConversationInfo | null>> {
+    return this.manager.getACPConversations(conversationIds);
+  }
+
+  getAllConversations(): Promise<ACPConversationInfo[]> {
+    return this.manager.getAllACPConversations();
+  }
+
+  getConversation(conversationId: ConversationID): Promise<ACPConversationInfo> {
+    return this.manager.getACPConversation(conversationId);
+  }
+
+  createConversation(
+    agent: ACPAgentConfig,
+    options: {
+      initialMessage?: string;
+      maxIterations?: number;
+      stuckDetection?: boolean;
+      workingDir?: string;
+    } = {}
+  ): Promise<ACPConversationInfo> {
+    return this.manager.createACPConversation(agent, options);
+  }
+}
+
 export interface ConversationManagerOptions {
   host: string;
   apiKey?: string;
 }
 
 export class ConversationManager {
-  private client: HttpClient;
+  private readonly client: HttpClient;
   public readonly host: string;
   public readonly apiKey?: string;
+  public readonly server: ServerClient;
+  public readonly llm: LLMMetadataClient;
+  public readonly settings: SettingsClient;
+  public readonly skills: SkillsClient;
+  public readonly tools: ToolClient;
+  public readonly vscode: VSCodeClient;
+  public readonly desktop: DesktopClient;
+  public readonly acp: ACPConversationNamespace;
 
   constructor(options: ConversationManagerOptions) {
     this.host = options.host.replace(/\/$/, '');
@@ -36,6 +89,20 @@ export class ConversationManager {
       apiKey: this.apiKey,
       timeout: 60000,
     });
+
+    const clientOptions = {
+      host: this.host,
+      ...(this.apiKey ? { apiKey: this.apiKey } : {}),
+    };
+
+    this.server = new ServerClient(clientOptions);
+    this.llm = new LLMMetadataClient(clientOptions);
+    this.settings = new SettingsClient(clientOptions);
+    this.skills = new SkillsClient(clientOptions);
+    this.tools = new ToolClient(clientOptions);
+    this.vscode = new VSCodeClient(clientOptions);
+    this.desktop = new DesktopClient(clientOptions);
+    this.acp = new ACPConversationNamespace(this);
   }
 
   /**
@@ -290,6 +357,13 @@ export class ConversationManager {
    * Close the manager and cleanup resources
    */
   close(): void {
+    this.server.close();
+    this.llm.close();
+    this.settings.close();
+    this.skills.close();
+    this.tools.close();
+    this.vscode.close();
+    this.desktop.close();
     this.client.close();
   }
 }

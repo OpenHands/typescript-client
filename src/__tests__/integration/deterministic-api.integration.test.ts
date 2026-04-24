@@ -1,16 +1,4 @@
-import {
-  Agent,
-  ConversationManager,
-  DesktopClient,
-  HttpError,
-  LLMMetadataClient,
-  ServerClient,
-  SettingsClient,
-  SkillsClient,
-  ToolClient,
-  VSCodeClient,
-  Workspace,
-} from '../../index';
+import { Agent, ConversationManager, HttpError, Workspace } from '../../index';
 import { getServerTestConfig } from './test-config';
 import {
   deleteWorkspaceFile,
@@ -35,27 +23,6 @@ describe('Deterministic API Integration Tests', () => {
   const manager = new ConversationManager({
     host: config.agentServerUrl,
   });
-  const serverClient = new ServerClient({
-    host: config.agentServerUrl,
-  });
-  const llmClient = new LLMMetadataClient({
-    host: config.agentServerUrl,
-  });
-  const settingsClient = new SettingsClient({
-    host: config.agentServerUrl,
-  });
-  const skillsClient = new SkillsClient({
-    host: config.agentServerUrl,
-  });
-  const toolClient = new ToolClient({
-    host: config.agentServerUrl,
-  });
-  const vscodeClient = new VSCodeClient({
-    host: config.agentServerUrl,
-  });
-  const desktopClient = new DesktopClient({
-    host: config.agentServerUrl,
-  });
   const workspace = new Workspace({
     host: config.agentServerUrl,
     workingDir: config.agentWorkspaceDir,
@@ -63,38 +30,31 @@ describe('Deterministic API Integration Tests', () => {
 
   afterAll(() => {
     manager.close();
-    serverClient.close();
-    llmClient.close();
-    settingsClient.close();
-    skillsClient.close();
-    toolClient.close();
-    vscodeClient.close();
-    desktopClient.close();
     workspace.close();
   });
 
   it(
     'reads server, metadata, settings, tools, and skills endpoints',
     async () => {
-      const root = await serverClient.getRoot<Record<string, unknown>>();
-      const alive = await serverClient.getAlive();
-      const health = await serverClient.getHealth();
-      const ready = await serverClient.getReady();
-      const info = await serverClient.getServerInfo();
+      const root = await manager.server.getRoot<Record<string, unknown>>();
+      const alive = await manager.server.getAlive();
+      const health = await manager.server.getHealth();
+      const ready = await manager.server.getReady();
+      const info = await manager.server.getServerInfo();
 
-      const providers = await llmClient.getProviders();
-      const models = await llmClient.getModels();
-      const verifiedModels = await llmClient.getVerifiedModels();
-      const agentSchema = await settingsClient.getAgentSchema();
-      const conversationSchema = await settingsClient.getConversationSchema();
-      const tools = await toolClient.listTools();
-      const skills = await skillsClient.getSkills({
+      const providers = await manager.llm.getProviders();
+      const models = await manager.llm.getModels();
+      const verifiedModels = await manager.llm.getVerifiedModels();
+      const agentSchema = await manager.settings.getAgentSchema();
+      const conversationSchema = await manager.settings.getConversationSchema();
+      const tools = await manager.tools.listTools();
+      const skills = await manager.skills.getSkills({
         load_public: false,
         load_user: false,
         load_project: false,
         load_org: false,
       });
-      const vscodeStatus = await vscodeClient.getStatus();
+      const vscodeStatus = await manager.vscode.getStatus();
 
       expect(root).toBeDefined();
       expect(alive.status).toBe('ok');
@@ -111,7 +71,7 @@ describe('Deterministic API Integration Tests', () => {
       expect(typeof vscodeStatus.enabled).toBe('boolean');
 
       try {
-        const desktopUrl = await desktopClient.getUrl();
+        const desktopUrl = await manager.desktop.getUrl();
         expect(desktopUrl === null || typeof desktopUrl === 'string').toBe(true);
       } catch (error) {
         expect(error).toBeInstanceOf(HttpError);
@@ -173,7 +133,7 @@ describe('Deterministic API Integration Tests', () => {
           conversation.switchProfile('__profile_that_should_not_exist__')
         ).rejects.toBeInstanceOf(HttpError);
 
-        const acpConversation = await manager.createACPConversation(
+        const acpConversation = await manager.acp.createConversation(
           {
             kind: 'Agent',
             llm: { model: 'dummy/model', api_key: 'dummy-key' },
@@ -182,9 +142,9 @@ describe('Deterministic API Integration Tests', () => {
         );
         acpConversationId = acpConversation.id;
 
-        const acpCount = await manager.countACPConversations();
-        const fetchedACP = await manager.getACPConversation(acpConversation.id);
-        const batchACP = await manager.getACPConversations([acpConversation.id]);
+        const acpCount = await manager.acp.countConversations();
+        const fetchedACP = await manager.acp.getConversation(acpConversation.id);
+        const batchACP = await manager.acp.getConversations([acpConversation.id]);
         expect(acpCount).toBeGreaterThan(0);
         expect(fetchedACP.id).toBe(acpConversation.id);
         expect(batchACP[0]?.id).toBe(acpConversation.id);

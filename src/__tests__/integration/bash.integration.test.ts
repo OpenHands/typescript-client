@@ -1,29 +1,31 @@
-import { BashClient, BashOutput, BashWebSocketClient } from '../../index';
+import { BashOutput, BashWebSocketClient, Workspace } from '../../index';
 import { getServerTestConfig } from './test-config';
 import { waitFor, sleep } from './test-utils';
 
 const config = getServerTestConfig();
 
 describe('Bash API Integration Tests', () => {
-  const bashClient = new BashClient({
+  const workspace = new Workspace({
     host: config.agentServerUrl,
+    workingDir: config.agentWorkspaceDir,
   });
+  const bash = workspace.bash;
 
   afterAll(() => {
-    bashClient.close();
+    workspace.close();
   });
 
   it(
     'supports start, search, get, batch-get, execute, and clear bash endpoints',
     async () => {
-      await bashClient.clearEvents();
+      await bash.clearEvents();
 
-      const command = await bashClient.startCommand('printf "bash-search-test"', undefined, 5);
+      const command = await bash.startCommand('printf "bash-search-test"', undefined, 5);
       let outputEvent: BashOutput | undefined;
 
       await waitFor(
         async () => {
-          const page = await bashClient.searchEvents({ command_id__eq: command.id, limit: 20 });
+          const page = await bash.searchEvents({ command_id__eq: command.id, limit: 20 });
           outputEvent = page.items.find((event) => event.kind === 'BashOutput') as
             | BashOutput
             | undefined;
@@ -32,10 +34,10 @@ describe('Bash API Integration Tests', () => {
         { timeout: config.testTimeout, interval: 250, message: 'bash output was not produced' }
       );
 
-      const fetchedCommand = await bashClient.getEvent(command.id);
-      const batch = await bashClient.getEvents([command.id, outputEvent!.id]);
-      const executeResult = await bashClient.executeCommand('printf "bash-execute-test"');
-      const cleared = await bashClient.clearEvents();
+      const fetchedCommand = await bash.getEvent(command.id);
+      const batch = await bash.getEvents([command.id, outputEvent!.id]);
+      const executeResult = await bash.executeCommand('printf "bash-execute-test"');
+      const cleared = await bash.clearEvents();
 
       expect(fetchedCommand.id).toBe(command.id);
       expect(batch[0]?.id).toBe(command.id);
@@ -61,7 +63,7 @@ describe('Bash API Integration Tests', () => {
       try {
         wsClient.start();
         await sleep(500);
-        await bashClient.startCommand('printf "bash-websocket-test"', undefined, 5);
+        await bash.startCommand('printf "bash-websocket-test"', undefined, 5);
 
         await waitFor(
           () =>
@@ -77,7 +79,7 @@ describe('Bash API Integration Tests', () => {
         );
       } finally {
         wsClient.stop();
-        await bashClient.clearEvents().catch(() => undefined);
+        await bash.clearEvents().catch(() => undefined);
       }
     },
     config.testTimeout

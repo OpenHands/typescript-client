@@ -1,4 +1,5 @@
-import { BashClient, HttpClient, ServerClient, SkillsClient } from '../index';
+import { ConversationManager, HttpClient, Workspace } from '../index';
+import { BashClient, ServerClient, SkillsClient } from '../clients';
 
 const originalFetch = global.fetch;
 
@@ -6,6 +7,27 @@ describe('Auxiliary API clients', () => {
   afterEach(() => {
     global.fetch = originalFetch;
     jest.restoreAllMocks();
+  });
+
+  it('ConversationManager exposes server and skills namespaces', () => {
+    const manager = new ConversationManager({ host: 'http://example.com', apiKey: 'secret' });
+
+    expect(manager.server).toBeInstanceOf(ServerClient);
+    expect(manager.skills).toBeInstanceOf(SkillsClient);
+    expect(manager.server.host).toBe('http://example.com');
+    expect(manager.server.apiKey).toBe('secret');
+  });
+
+  it('Workspace exposes bash namespace', () => {
+    const workspace = new Workspace({
+      host: 'http://example.com',
+      workingDir: '/tmp',
+      apiKey: 'secret',
+    });
+
+    expect(workspace.bash).toBeInstanceOf(BashClient);
+    expect(workspace.bash.host).toBe('http://example.com');
+    expect(workspace.bash.apiKey).toBe('secret');
   });
 
   it('ServerClient.getReady accepts a 503 readiness response', async () => {

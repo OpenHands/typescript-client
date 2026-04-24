@@ -140,14 +140,6 @@ export type { BashWebSocketClientOptions } from './events/bash-websocket-client'
 
 // HTTP client
 export { HttpClient, HttpError } from './client/http-client';
-export { ServerClient } from './client/server-client';
-export { BashClient } from './client/bash-client';
-export { LLMMetadataClient } from './client/llm-client';
-export { SettingsClient } from './client/settings-client';
-export { SkillsClient } from './client/skills-client';
-export { ToolClient } from './client/tool-client';
-export { VSCodeClient } from './client/vscode-client';
-export { DesktopClient } from './client/desktop-client';
 
 // Types and interfaces
 export type {
@@ -233,15 +225,6 @@ export type {
 // Client options
 export type { HttpClientOptions, RequestOptions, HttpResponse } from './client/http-client';
 
-export type { ServerClientOptions } from './client/server-client';
-export type { BashClientOptions } from './client/bash-client';
-export type { LLMMetadataClientOptions } from './client/llm-client';
-export type { SettingsClientOptions } from './client/settings-client';
-export type { SkillsClientOptions } from './client/skills-client';
-export type { ToolClientOptions } from './client/tool-client';
-export type { VSCodeClientOptions, GetVSCodeUrlOptions } from './client/vscode-client';
-export type { DesktopClientOptions } from './client/desktop-client';
-
 export type {
   AliveStatus,
   ReadyStatus,
@@ -321,14 +304,6 @@ import { RemoteEventsList } from './events/remote-events-list';
 import { WebSocketCallbackClient } from './events/websocket-client';
 import { BashWebSocketClient } from './events/bash-websocket-client';
 import { HttpClient, HttpError } from './client/http-client';
-import { ServerClient } from './client/server-client';
-import { BashClient } from './client/bash-client';
-import { LLMMetadataClient } from './client/llm-client';
-import { SettingsClient } from './client/settings-client';
-import { SkillsClient } from './client/skills-client';
-import { ToolClient } from './client/tool-client';
-import { VSCodeClient } from './client/vscode-client';
-import { DesktopClient } from './client/desktop-client';
 import { EventSortOrder, AgentExecutionStatus, ConversationExecutionStatus } from './types/base';
 import { ConversationSortOrder } from './models/conversation';
 import { Agent } from './agent/agent';
@@ -370,14 +345,6 @@ export default {
   BashWebSocketClient,
   HttpClient,
   HttpError,
-  ServerClient,
-  BashClient,
-  LLMMetadataClient,
-  SettingsClient,
-  SkillsClient,
-  ToolClient,
-  VSCodeClient,
-  DesktopClient,
   EventSortOrder,
   ConversationSortOrder,
   AgentExecutionStatus,

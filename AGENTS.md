@@ -111,6 +111,9 @@ src/workspace/
 - `createWorkspace({ type, options })` - Explicit type selection
 - `createWorkspaceAuto(options)` - Auto-detect based on presence of `host` option
 
+
+**Ergonomic API note**: Keep `Workspace`/`RemoteWorkspace` as the main user-facing entry point for remote execution. Lower-level bash endpoint access should hang off `workspace.bash`, while direct endpoint-specific clients belong in the secondary `@openhands/typescript-client/clients` entrypoint instead of the root SDK surface.
+
 ### LLM Architecture
 
 The LLM module provides a unified interface for interacting with Large Language Models:
@@ -215,6 +218,9 @@ await conversation.close();
 ```
 
 **Factory Functions**:
+
+**Ergonomic API note**: Keep `ConversationManager` as the main server-scoped entry point. Server/LLM/settings/skills/tools/VSCode/desktop operations should be reachable through manager namespaces such as `manager.server`, `manager.llm`, and `manager.desktop`; ACP-specific operations should be reachable via `manager.acp`.
+
 
 - `createConversation({ type, agent, workspace, options })` - Explicit type selection
 - `createConversationAuto(agent, workspace, options)` - Auto-detect based on workspace type

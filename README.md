@@ -120,6 +120,13 @@ const result = await conversation.workspace.executeCommand('ls -la');
 console.log('Command output:', result.stdout);
 console.log('Exit code:', result.exit_code);
 
+// Access lower-level bash APIs from the workspace
+const bashCommand = await conversation.workspace.bash.startCommand('ls -la');
+const bashEvents = await conversation.workspace.bash.searchEvents({
+  command_id__eq: bashCommand.id,
+  limit: 20,
+});
+
 // Upload a file
 const uploadResult = await conversation.workspace.fileUpload(
   './local-file.txt',
@@ -131,6 +138,28 @@ const downloadResult = await conversation.workspace.fileDownload(
   '/remote/path/file.txt',
   './downloaded-file.txt'
 );
+```
+
+### Server-wide Operations
+
+```typescript
+import { ConversationManager } from '@openhands/typescript-client';
+
+const manager = new ConversationManager({
+  host: 'http://localhost:3000',
+  apiKey: 'your-session-api-key',
+});
+
+const serverInfo = await manager.server.getServerInfo();
+const providers = await manager.llm.getProviders();
+const tools = await manager.tools.listTools();
+const acpCount = await manager.acp.countConversations();
+```
+
+If you need the lower-level endpoint-specific clients directly, import them from the secondary entrypoint:
+
+```typescript
+import { ServerClient, BashClient } from '@openhands/typescript-client/clients';
 ```
 
 ### Working with Events

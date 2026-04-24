@@ -5,6 +5,7 @@
  * agent server. It mirrors the Python SDK's RemoteWorkspace class.
  */
 
+import { BashClient } from '../client/bash-client';
 import { HttpClient } from '../client/http-client';
 import {
   CommandResult,
@@ -37,6 +38,7 @@ export class RemoteWorkspace implements IWorkspace {
   public readonly workingDir: string;
   public readonly apiKey?: string;
   public readonly client: HttpClient;
+  public readonly bash: BashClient;
 
   constructor(options: RemoteWorkspaceOptions) {
     this.host = options.host.replace(/\/$/, '');
@@ -47,6 +49,11 @@ export class RemoteWorkspace implements IWorkspace {
       baseUrl: this.host,
       apiKey: this.apiKey,
       timeout: 60000,
+    });
+
+    this.bash = new BashClient({
+      host: this.host,
+      ...(this.apiKey ? { apiKey: this.apiKey } : {}),
     });
   }
 
@@ -252,6 +259,7 @@ export class RemoteWorkspace implements IWorkspace {
   }
 
   close(): void {
+    this.bash.close();
     this.client.close();
   }
 }
