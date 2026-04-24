@@ -15,6 +15,10 @@ const SKIP_TESTS = skipIfNoConfig();
 // Skip flaky tests that depend on LLM behavior in CI
 const SKIP_FLAKY_TESTS = process.env.SKIP_FLAKY_TESTS !== 'false';
 
+type CreateConversationResponse = {
+  id: string;
+};
+
 describe('WebSocket Integration Tests', () => {
   let config: ReturnType<typeof getTestConfig>;
   let httpClient: HttpClient;
@@ -27,6 +31,7 @@ describe('WebSocket Integration Tests', () => {
     config = getTestConfig();
     httpClient = new HttpClient({
       baseUrl: config.agentServerUrl,
+      ...(config.apiKey ? { apiKey: config.apiKey } : {}),
       timeout: 60000,
     });
   });
@@ -44,7 +49,7 @@ describe('WebSocket Integration Tests', () => {
         if (SKIP_TESTS) return;
 
         // Create a conversation first
-        const createResponse = await httpClient.post('/api/conversations', {
+        const createResponse = await httpClient.post<CreateConversationResponse>('/api/conversations', {
           agent: {
             kind: 'Agent',
             llm: createTestLLMConfig(),
@@ -63,6 +68,7 @@ describe('WebSocket Integration Tests', () => {
         // Create WebSocket client
         const wsClient = new WebSocketCallbackClient({
           host: config.agentServerUrl,
+          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           conversationId,
           callback: (event) => {
             receivedEvents.push(event);
@@ -112,7 +118,7 @@ describe('WebSocket Integration Tests', () => {
         if (SKIP_TESTS) return;
 
         // Create a conversation
-        const createResponse = await httpClient.post('/api/conversations', {
+        const createResponse = await httpClient.post<CreateConversationResponse>('/api/conversations', {
           agent: {
             kind: 'Agent',
             llm: createTestLLMConfig(),
@@ -131,6 +137,7 @@ describe('WebSocket Integration Tests', () => {
 
         const wsClient = new WebSocketCallbackClient({
           host: config.agentServerUrl,
+          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           conversationId,
           callback: (event) => {
             eventTypes.add(event.kind);
@@ -174,7 +181,7 @@ describe('WebSocket Integration Tests', () => {
         if (SKIP_TESTS) return;
 
         // Create a conversation
-        const createResponse = await httpClient.post('/api/conversations', {
+        const createResponse = await httpClient.post<CreateConversationResponse>('/api/conversations', {
           agent: {
             kind: 'Agent',
             llm: createTestLLMConfig(),
@@ -193,6 +200,7 @@ describe('WebSocket Integration Tests', () => {
 
         const wsClient = new WebSocketCallbackClient({
           host: config.agentServerUrl,
+          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           conversationId,
           callback: (event) => {
             receivedEvents.push(event);
@@ -239,7 +247,7 @@ describe('WebSocket Integration Tests', () => {
         if (SKIP_TESTS) return;
 
         // Create a conversation
-        const createResponse = await httpClient.post('/api/conversations', {
+        const createResponse = await httpClient.post<CreateConversationResponse>('/api/conversations', {
           agent: {
             kind: 'Agent',
             llm: createTestLLMConfig(),
@@ -257,6 +265,7 @@ describe('WebSocket Integration Tests', () => {
 
         const wsClient = new WebSocketCallbackClient({
           host: config.agentServerUrl,
+          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           conversationId,
           callback: (event) => {
             receivedEvents.push(event);
@@ -300,7 +309,7 @@ describe('WebSocket Integration Tests', () => {
         if (SKIP_TESTS) return;
 
         // Create a conversation
-        const createResponse = await httpClient.post('/api/conversations', {
+        const createResponse = await httpClient.post<CreateConversationResponse>('/api/conversations', {
           agent: {
             kind: 'Agent',
             llm: createTestLLMConfig(),
@@ -318,6 +327,7 @@ describe('WebSocket Integration Tests', () => {
 
         const wsClient = new WebSocketCallbackClient({
           host: config.agentServerUrl,
+          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           conversationId,
           callback: (event) => {
             if (event.kind === 'MessageEvent') {
@@ -361,7 +371,7 @@ describe('WebSocket Integration Tests', () => {
         if (SKIP_TESTS) return;
 
         // Create a conversation
-        const createResponse = await httpClient.post('/api/conversations', {
+        const createResponse = await httpClient.post<CreateConversationResponse>('/api/conversations', {
           agent: {
             kind: 'Agent',
             llm: createTestLLMConfig(),
@@ -379,6 +389,7 @@ describe('WebSocket Integration Tests', () => {
 
         const wsClient = new WebSocketCallbackClient({
           host: config.agentServerUrl,
+          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           conversationId,
           callback: (event) => {
             if (event.kind === 'ActionEvent') {
@@ -423,7 +434,7 @@ describe('WebSocket Integration Tests', () => {
         if (SKIP_TESTS) return;
 
         // Create a conversation
-        const createResponse = await httpClient.post('/api/conversations', {
+        const createResponse = await httpClient.post<CreateConversationResponse>('/api/conversations', {
           agent: {
             kind: 'Agent',
             llm: createTestLLMConfig(),
@@ -441,6 +452,7 @@ describe('WebSocket Integration Tests', () => {
 
         const wsClient = new WebSocketCallbackClient({
           host: config.agentServerUrl,
+          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           conversationId,
           callback: (event) => {
             if (event.kind === 'ObservationEvent') {
@@ -487,7 +499,7 @@ describe('WebSocket Integration Tests', () => {
         if (SKIP_TESTS) return;
 
         // Create a conversation
-        const createResponse = await httpClient.post('/api/conversations', {
+        const createResponse = await httpClient.post<CreateConversationResponse>('/api/conversations', {
           agent: {
             kind: 'Agent',
             llm: createTestLLMConfig(),
@@ -505,6 +517,7 @@ describe('WebSocket Integration Tests', () => {
 
         const wsClient = new WebSocketCallbackClient({
           host: config.agentServerUrl,
+          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           conversationId,
           callback: (event) => {
             if (event.kind === 'ConversationStateUpdateEvent') {

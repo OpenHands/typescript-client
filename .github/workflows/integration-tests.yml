@@ -88,7 +88,18 @@ jobs:
         # Show server info
         curl http://localhost:${{ env.AGENT_SERVER_PORT }}/server_info
 
-    - name: Run integration tests
+    - name: Run deterministic integration tests
+      env:
+        AGENT_SERVER_URL: http://localhost:${{ env.AGENT_SERVER_PORT }}
+        HOST_WORKSPACE_DIR: ${{ env.HOST_WORKSPACE_DIR }}
+        AGENT_WORKSPACE_DIR: ${{ env.AGENT_WORKSPACE_DIR }}
+        LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+        LLM_MODEL: ${{ github.event.inputs.llm_model || secrets.LLM_MODEL || 'anthropic/claude-sonnet-4-5-20250929' }}
+        LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+        TEST_TIMEOUT: 180000
+      run: npm run test:integration:deterministic
+
+    - name: Run LLM-backed integration tests
       env:
         AGENT_SERVER_URL: http://localhost:${{ env.AGENT_SERVER_PORT }}
         HOST_WORKSPACE_DIR: ${{ env.HOST_WORKSPACE_DIR }}
@@ -99,12 +110,11 @@ jobs:
         TEST_TIMEOUT: 180000
       run: |
         if [ -z "$LLM_API_KEY" ]; then
-          echo "⚠️ LLM_API_KEY secret not set - skipping integration tests"
-          echo "To run integration tests, set the LLM_API_KEY secret in repository settings"
+          echo "⚠️ LLM_API_KEY secret not set - skipping LLM-backed integration tests"
           exit 0
         fi
 
-        npm run test:integration
+        npm run test:integration:llm
 
     - name: Upload test results
       if: always()
