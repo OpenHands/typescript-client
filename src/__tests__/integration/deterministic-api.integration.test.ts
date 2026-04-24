@@ -31,18 +31,6 @@ function createDummyAgent(): Agent {
   });
 }
 
-async function expectSupportedOrLegacy404<T>(
-  request: () => Promise<T>,
-  assertSuccess: (value: T) => void
-) {
-  try {
-    assertSuccess(await request());
-  } catch (error) {
-    expect(error).toBeInstanceOf(HttpError);
-    expect((error as HttpError).status).toBe(404);
-  }
-}
-
 describe('Deterministic API Integration Tests', () => {
   const manager = new ConversationManager({
     host: config.agentServerUrl,
@@ -103,73 +91,40 @@ describe('Deterministic API Integration Tests', () => {
       const ready = await serverClient.getReady();
       const info = await serverClient.getServerInfo();
 
+      const providers = await llmClient.getProviders();
+      const models = await llmClient.getModels();
+      const verifiedModels = await llmClient.getVerifiedModels();
+      const agentSchema = await settingsClient.getAgentSchema();
+      const conversationSchema = await settingsClient.getConversationSchema();
+      const tools = await toolClient.listTools();
+      const skills = await skillsClient.getSkills({
+        load_public: false,
+        load_user: false,
+        load_project: false,
+        load_org: false,
+      });
+      const vscodeStatus = await vscodeClient.getStatus();
+
       expect(root).toBeDefined();
       expect(alive.status).toBe('ok');
       expect(health).toBe('OK');
       expect(['ready', 'initializing']).toContain(ready.status);
       expect(info.version).toBeDefined();
-
-      await expectSupportedOrLegacy404(
-        () => llmClient.getProviders(),
-        (providers) => {
-          expect(Array.isArray(providers)).toBe(true);
-        }
-      );
-      await expectSupportedOrLegacy404(
-        () => llmClient.getModels(),
-        (models) => {
-          expect(Array.isArray(models)).toBe(true);
-        }
-      );
-      await expectSupportedOrLegacy404(
-        () => llmClient.getVerifiedModels(),
-        (verifiedModels) => {
-          expect(typeof verifiedModels).toBe('object');
-        }
-      );
-      await expectSupportedOrLegacy404(
-        () => settingsClient.getAgentSchema(),
-        (agentSchema) => {
-          expect(agentSchema.model_name).toBeTruthy();
-        }
-      );
-      await expectSupportedOrLegacy404(
-        () => settingsClient.getConversationSchema(),
-        (conversationSchema) => {
-          expect(conversationSchema.model_name).toBeTruthy();
-        }
-      );
-      await expectSupportedOrLegacy404(
-        () => toolClient.listTools(),
-        (tools) => {
-          expect(Array.isArray(tools)).toBe(true);
-        }
-      );
-      await expectSupportedOrLegacy404(
-        () =>
-          skillsClient.getSkills({
-            load_public: false,
-            load_user: false,
-            load_project: false,
-            load_org: false,
-          }),
-        (skills) => {
-          expect(Array.isArray(skills.skills)).toBe(true);
-        }
-      );
-      await expectSupportedOrLegacy404(
-        () => vscodeClient.getStatus(),
-        (vscodeStatus) => {
-          expect(typeof vscodeStatus.enabled).toBe('boolean');
-        }
-      );
+      expect(Array.isArray(providers)).toBe(true);
+      expect(Array.isArray(models)).toBe(true);
+      expect(typeof verifiedModels).toBe('object');
+      expect(agentSchema.model_name).toBeTruthy();
+      expect(conversationSchema.model_name).toBeTruthy();
+      expect(Array.isArray(tools)).toBe(true);
+      expect(Array.isArray(skills.skills)).toBe(true);
+      expect(typeof vscodeStatus.enabled).toBe('boolean');
 
       try {
         const desktopUrl = await desktopClient.getUrl();
         expect(desktopUrl === null || typeof desktopUrl === 'string').toBe(true);
       } catch (error) {
         expect(error).toBeInstanceOf(HttpError);
-        expect([404, 503]).toContain((error as HttpError).status);
+        expect((error as HttpError).status).toBe(503);
       }
     },
     config.testTimeout
@@ -205,13 +160,8 @@ describe('Deterministic API Integration Tests', () => {
         expect(fetchedEvent.id).toBe(eventId);
         expect(fetchedBatch[0]?.id).toBe(eventId);
 
-        try {
-          const finalResponse = await conversation.getAgentFinalResponse();
-          expect(typeof finalResponse).toBe('string');
-        } catch (error) {
-          expect(error).toBeInstanceOf(HttpError);
-          expect((error as HttpError).status).toBe(404);
-        }
+        const finalResponse = await conversation.getAgentFinalResponse();
+        expect(typeof finalResponse).toBe('string');
 
         const trajectoryFile = `/workspace/conversations/${conversation.id.replace(/-/g, '')}.zip`;
         await workspace.executeCommand(
@@ -222,41 +172,31 @@ describe('Deterministic API Integration Tests', () => {
         expect(await trajectory.text()).toContain('trajectory-data');
         await workspace.executeCommand(`rm -f ${trajectoryFile}`);
 
-        try {
-          const forkedConversation = await conversation.fork({
-            title: 'Forked from deterministic test',
-          });
-          forkedId = forkedConversation.id;
-          expect(forkedConversation.id).not.toBe(conversation.id);
-        } catch (error) {
-          expect(error).toBeInstanceOf(HttpError);
-          expect((error as HttpError).status).toBe(404);
-        }
+        const forkedConversation = await conversation.fork({
+          title: 'Forked from deterministic test',
+        });
+        forkedId = forkedConversation.id;
+        expect(forkedConversation.id).not.toBe(conversation.id);
 
         await expect(
           conversation.switchProfile('__profile_that_should_not_exist__')
         ).rejects.toBeInstanceOf(HttpError);
 
-        try {
-          const acpConversation = await manager.createACPConversation(
-            {
-              kind: 'Agent',
-              llm: { model: 'dummy/model', api_key: 'dummy-key' },
-            },
-            { workingDir: config.agentWorkspaceDir }
-          );
-          acpConversationId = acpConversation.id;
+        const acpConversation = await manager.createACPConversation(
+          {
+            kind: 'Agent',
+            llm: { model: 'dummy/model', api_key: 'dummy-key' },
+          },
+          { workingDir: config.agentWorkspaceDir }
+        );
+        acpConversationId = acpConversation.id;
 
-          const acpCount = await manager.countACPConversations();
-          const fetchedACP = await manager.getACPConversation(acpConversation.id);
-          const batchACP = await manager.getACPConversations([acpConversation.id]);
-          expect(acpCount).toBeGreaterThan(0);
-          expect(fetchedACP.id).toBe(acpConversation.id);
-          expect(batchACP[0]?.id).toBe(acpConversation.id);
-        } catch (error) {
-          expect(error).toBeInstanceOf(HttpError);
-          expect((error as HttpError).status).toBe(404);
-        }
+        const acpCount = await manager.countACPConversations();
+        const fetchedACP = await manager.getACPConversation(acpConversation.id);
+        const batchACP = await manager.getACPConversations([acpConversation.id]);
+        expect(acpCount).toBeGreaterThan(0);
+        expect(fetchedACP.id).toBe(acpConversation.id);
+        expect(batchACP[0]?.id).toBe(acpConversation.id);
       } finally {
         if (forkedId) {
           await manager.deleteConversation(forkedId).catch(() => undefined);
@@ -305,15 +245,11 @@ describe('Deterministic API Integration Tests', () => {
           ].join(' && ')
         );
 
-        try {
-          const changes = await workspace.gitChanges(repoDir);
-          const diff = await workspace.gitDiff(trackedFile);
+        const changes = await workspace.gitChanges(repoDir);
+        const diff = await workspace.gitDiff(trackedFile);
 
-          expect(changes.some((change) => String(change.path).includes('tracked.txt'))).toBe(true);
-          expect(diff.modified || diff.diff).toContain('line2');
-        } catch (error) {
-          expect(String(error)).toMatch(/Not a git repository|HTTP request failed \((404|500)/);
-        }
+        expect(changes.some((change) => String(change.path).includes('tracked.txt'))).toBe(true);
+        expect(diff.modified || diff.diff).toContain('line2');
       } finally {
         deleteWorkspaceFile(fileName);
         await workspace.executeCommand(`rm -rf ${repoDir}`);

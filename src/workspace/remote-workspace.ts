@@ -5,7 +5,7 @@
  * agent server. It mirrors the Python SDK's RemoteWorkspace class.
  */
 
-import { HttpClient, HttpError } from '../client/http-client';
+import { HttpClient } from '../client/http-client';
 import {
   CommandResult,
   FileOperationResult,
@@ -84,6 +84,8 @@ export class RemoteWorkspace implements IWorkspace {
     destinationPath: string,
     fileName?: string
   ): Promise<FileOperationResult> {
+    const formData = new FormData();
+
     let blob: Blob;
     let finalFileName: string;
 
@@ -98,33 +100,15 @@ export class RemoteWorkspace implements IWorkspace {
       finalFileName = fileName || 'text-file.txt';
     }
 
-    const buildFormData = (): FormData => {
-      const formData = new FormData();
-      formData.append('file', blob, finalFileName);
-      return formData;
-    };
+    formData.append('file', blob, finalFileName);
 
-    let response;
-    try {
-      response = await this.client.request({
-        method: 'POST',
-        url: '/api/file/upload',
-        params: { path: destinationPath },
-        data: buildFormData(),
-        timeout: 60000,
-      });
-    } catch (error) {
-      if (!this.shouldFallbackToLegacyFileUpload(error)) {
-        throw error;
-      }
-
-      response = await this.client.request({
-        method: 'POST',
-        url: this.getLegacyFileEndpoint('upload', destinationPath),
-        data: buildFormData(),
-        timeout: 60000,
-      });
-    }
+    const response = await this.client.request({
+      method: 'POST',
+      url: '/api/file/upload',
+      params: { path: destinationPath },
+      data: formData,
+      timeout: 60000,
+    });
 
     const resultData = response.data as { success?: boolean; file_size?: number; error?: string };
 
@@ -138,21 +122,10 @@ export class RemoteWorkspace implements IWorkspace {
   }
 
   async fileDownload(sourcePath: string): Promise<FileDownloadResult> {
-    let response;
-    try {
-      response = await this.client.get('/api/file/download', {
-        params: { path: sourcePath },
-        timeout: 60000,
-      });
-    } catch (error) {
-      if (!this.shouldFallbackToLegacyGet(error)) {
-        throw error;
-      }
-
-      response = await this.client.get(this.getLegacyFileEndpoint('download', sourcePath), {
-        timeout: 60000,
-      });
-    }
+    const response = await this.client.get('/api/file/download', {
+      params: { path: sourcePath },
+      timeout: 60000,
+    });
 
     let content: string | Blob;
     let fileSize: number;
@@ -187,13 +160,6 @@ export class RemoteWorkspace implements IWorkspace {
       });
       return response.data;
     } catch (error) {
-      if (this.shouldFallbackToLegacyGet(error)) {
-        const response = await this.client.get<GitChange[]>(
-          this.getLegacyGitEndpoint('changes', path)
-        );
-        return response.data;
-      }
-
       throw new Error(
         `Failed to get git changes: ${error instanceof Error ? error.message : String(error)}`,
         { cause: error }
@@ -208,11 +174,6 @@ export class RemoteWorkspace implements IWorkspace {
       });
       return response.data;
     } catch (error) {
-      if (this.shouldFallbackToLegacyGet(error)) {
-        const response = await this.client.get<GitDiff>(this.getLegacyGitEndpoint('diff', path));
-        return response.data;
-      }
-
       throw new Error(
         `Failed to get git diff: ${error instanceof Error ? error.message : String(error)}`,
         { cause: error }
@@ -288,22 +249,6 @@ export class RemoteWorkspace implements IWorkspace {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }
-
-  private shouldFallbackToLegacyFileUpload(error: unknown): boolean {
-    return error instanceof HttpError && [400, 404, 405].includes(error.status);
-  }
-
-  private shouldFallbackToLegacyGet(error: unknown): boolean {
-    return error instanceof HttpError && [400, 404, 405].includes(error.status);
-  }
-
-  private getLegacyFileEndpoint(operation: 'upload' | 'download', path: string): string {
-    return `/api/file/${operation}/${encodeURIComponent(path)}`;
-  }
-
-  private getLegacyGitEndpoint(operation: 'changes' | 'diff', path: string): string {
-    return `/api/git/${operation}/${encodeURIComponent(path)}`;
   }
 
   close(): void {

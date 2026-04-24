@@ -1,4 +1,4 @@
-import { BashClient, HttpClient, RemoteWorkspace, ServerClient, SkillsClient } from '../index';
+import { BashClient, HttpClient, ServerClient, SkillsClient } from '../index';
 
 const originalFetch = global.fetch;
 
@@ -21,39 +21,6 @@ describe('Auxiliary API clients', () => {
 
     expect(ready.status).toBe('initializing');
     expect(ready.message).toBe('Booting');
-  });
-
-  it('ServerClient.getReady falls back to /alive when /ready is unavailable', async () => {
-    global.fetch = jest
-      .fn()
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ detail: 'Not Found' }), {
-          status: 404,
-          headers: { 'content-type': 'application/json' },
-        })
-      )
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ status: 'ok' }), {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        })
-      ) as typeof fetch;
-
-    const client = new ServerClient({ host: 'http://example.com' });
-    const ready = await client.getReady();
-
-    expect(ready.status).toBe('ready');
-    expect(ready.message).toContain('/alive');
-    expect(global.fetch).toHaveBeenNthCalledWith(
-      1,
-      'http://example.com/ready',
-      expect.objectContaining({ method: 'GET' })
-    );
-    expect(global.fetch).toHaveBeenNthCalledWith(
-      2,
-      'http://example.com/alive',
-      expect.objectContaining({ method: 'GET' })
-    );
   });
 
   it('SkillsClient.syncSkills posts to the sync endpoint', async () => {
@@ -105,42 +72,6 @@ describe('Auxiliary API clients', () => {
         method: 'POST',
         body: JSON.stringify({ command: 'echo hi', cwd: '/tmp', timeout: 3 }),
       })
-    );
-  });
-
-  it('RemoteWorkspace.uploadText falls back to the legacy path endpoint on multipart parse errors', async () => {
-    global.fetch = jest
-      .fn()
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ detail: 'There was an error parsing the body' }), {
-          status: 400,
-          headers: { 'content-type': 'application/json' },
-        })
-      )
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ success: true }), {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        })
-      ) as typeof fetch;
-
-    const workspace = new RemoteWorkspace({
-      host: 'http://example.com',
-      workingDir: '/workspace',
-    });
-
-    const result = await workspace.uploadText('hello', '/workspace/test.txt', 'test.txt');
-
-    expect(result.success).toBe(true);
-    expect(global.fetch).toHaveBeenNthCalledWith(
-      1,
-      'http://example.com/api/file/upload?path=%2Fworkspace%2Ftest.txt',
-      expect.objectContaining({ method: 'POST' })
-    );
-    expect(global.fetch).toHaveBeenNthCalledWith(
-      2,
-      'http://example.com/api/file/upload/%2Fworkspace%2Ftest.txt',
-      expect.objectContaining({ method: 'POST' })
     );
   });
 

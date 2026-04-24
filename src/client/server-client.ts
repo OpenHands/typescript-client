@@ -1,4 +1,4 @@
-import { HttpClient, HttpError } from './http-client';
+import { HttpClient } from './http-client';
 import { AliveStatus, ReadyStatus } from '../models/api';
 import { ServerInfo } from '../types/base';
 
@@ -39,21 +39,10 @@ export class ServerClient {
   }
 
   async getReady(): Promise<ReadyStatus> {
-    try {
-      const response = await this.client.get<ReadyStatus>('/ready', {
-        acceptableStatusCodes: new Set([200, 503]),
-      });
-      return response.data;
-    } catch (error) {
-      if (error instanceof HttpError && (error.status === 404 || error.status === 405)) {
-        const alive = await this.getAlive();
-        return {
-          status: alive.status === 'ok' ? 'ready' : alive.status,
-          message: 'Legacy agent-server does not expose /ready; fell back to /alive.',
-        };
-      }
-      throw error;
-    }
+    const response = await this.client.get<ReadyStatus>('/ready', {
+      acceptableStatusCodes: new Set([200, 503]),
+    });
+    return response.data;
   }
 
   async getServerInfo(): Promise<ServerInfo> {
