@@ -286,6 +286,14 @@ Required GitHub secrets:
 - `LLM_API_KEY`: API key for the LLM provider
 - `LLM_MODEL` (optional): Override the default model
 
+### CI Image Compatibility Notes
+
+- The GitHub Actions `ghcr.io/openhands/agent-server:main-python` image may currently report `version: 1.0.0a5`, which lags behind the newest documented API surface.
+- Deterministic integration tests should be capability-aware: newer endpoints such as `/ready`, LLM metadata/settings/tooling routes, `agent_final_response`, `fork`, and ACP routes may return `404` on that image.
+- Workspace file/git query endpoints may need client fallback to the legacy path-style routes for older server builds.
+- The alpha `1.0.0a*` server line has a server-side bash websocket bug where UUIDs are not JSON-serializable; integration tests should skip strict bash websocket assertions for those versions.
+
+
 ## Agent Behavior Guidelines
 
 **IMPORTANT**: The agent should NEVER start the server or browse to view the app unless the user explicitly asks for it. This includes:
