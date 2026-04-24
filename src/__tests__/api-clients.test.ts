@@ -1,9 +1,4 @@
-import {
-  BashClient,
-  HttpClient,
-  ServerClient,
-  SkillsClient,
-} from '../index';
+import { BashClient, HttpClient, ServerClient, SkillsClient } from '../index';
 
 const originalFetch = global.fetch;
 

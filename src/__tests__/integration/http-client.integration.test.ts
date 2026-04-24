@@ -251,7 +251,9 @@ describe('HttpClient Integration Tests', () => {
       async () => {
         if (SKIP_TESTS) return;
 
-        const response = await client.get<ConversationResourceResponse>(`/api/conversations/${testConversationId}`);
+        const response = await client.get<ConversationResourceResponse>(
+          `/api/conversations/${testConversationId}`
+        );
 
         expect(response.status).toBe(200);
         expect(response.data).toBeDefined();

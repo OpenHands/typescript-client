@@ -44,16 +44,21 @@ export class ConversationManager {
   async searchConversations(
     options: ConversationSearchRequest = {}
   ): Promise<ConversationSearchResponse> {
-    const response = await this.client.get<ConversationSearchResponse>('/api/conversations/search', {
-      params: options as Record<string, unknown>,
-    });
+    const response = await this.client.get<ConversationSearchResponse>(
+      '/api/conversations/search',
+      {
+        params: options as Record<string, unknown>,
+      }
+    );
     return response.data;
   }
 
   /**
    * Count conversations matching the provided filters.
    */
-  async countConversations(options: { status?: ConversationExecutionStatus } = {}): Promise<number> {
+  async countConversations(
+    options: { status?: ConversationExecutionStatus } = {}
+  ): Promise<number> {
     const response = await this.client.get<number>('/api/conversations/count', {
       params: options as Record<string, unknown>,
     });
@@ -63,7 +68,9 @@ export class ConversationManager {
   /**
    * Batch get conversations by ID.
    */
-  async getConversations(conversationIds: ConversationID[]): Promise<Array<ConversationInfo | null>> {
+  async getConversations(
+    conversationIds: ConversationID[]
+  ): Promise<Array<ConversationInfo | null>> {
     const response = await this.client.get<Array<ConversationInfo | null>>('/api/conversations', {
       params: { ids: conversationIds },
     });
@@ -95,7 +102,9 @@ export class ConversationManager {
    * Get a specific conversation by ID
    */
   async getConversation(conversationId: ConversationID): Promise<ConversationInfo> {
-    const response = await this.client.get<ConversationInfo>(`/api/conversations/${conversationId}`);
+    const response = await this.client.get<ConversationInfo>(
+      `/api/conversations/${conversationId}`
+    );
     return response.data;
   }
 
@@ -170,7 +179,9 @@ export class ConversationManager {
   /**
    * Count ACP-capable conversations.
    */
-  async countACPConversations(options: { status?: ConversationExecutionStatus } = {}): Promise<number> {
+  async countACPConversations(
+    options: { status?: ConversationExecutionStatus } = {}
+  ): Promise<number> {
     const response = await this.client.get<number>('/api/acp/conversations/count', {
       params: options,
     });
@@ -180,10 +191,15 @@ export class ConversationManager {
   /**
    * Batch get ACP-capable conversations by ID.
    */
-  async getACPConversations(conversationIds: ConversationID[]): Promise<Array<ACPConversationInfo | null>> {
-    const response = await this.client.get<Array<ACPConversationInfo | null>>('/api/acp/conversations', {
-      params: { ids: conversationIds },
-    });
+  async getACPConversations(
+    conversationIds: ConversationID[]
+  ): Promise<Array<ACPConversationInfo | null>> {
+    const response = await this.client.get<Array<ACPConversationInfo | null>>(
+      '/api/acp/conversations',
+      {
+        params: { ids: conversationIds },
+      }
+    );
     return response.data;
   }
 

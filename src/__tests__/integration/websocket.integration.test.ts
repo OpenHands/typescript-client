@@ -49,18 +49,21 @@ describe('WebSocket Integration Tests', () => {
         if (SKIP_TESTS) return;
 
         // Create a conversation first
-        const createResponse = await httpClient.post<CreateConversationResponse>('/api/conversations', {
-          agent: {
-            kind: 'Agent',
-            llm: createTestLLMConfig(),
-          },
-          max_iterations: 10,
-          stuck_detection: true,
-          workspace: {
-            type: 'local',
-            working_dir: config.agentWorkspaceDir,
-          },
-        });
+        const createResponse = await httpClient.post<CreateConversationResponse>(
+          '/api/conversations',
+          {
+            agent: {
+              kind: 'Agent',
+              llm: createTestLLMConfig(),
+            },
+            max_iterations: 10,
+            stuck_detection: true,
+            workspace: {
+              type: 'local',
+              working_dir: config.agentWorkspaceDir,
+            },
+          }
+        );
 
         const conversationId = createResponse.data.id;
         const receivedEvents: Event[] = [];
@@ -118,18 +121,21 @@ describe('WebSocket Integration Tests', () => {
         if (SKIP_TESTS) return;
 
         // Create a conversation
-        const createResponse = await httpClient.post<CreateConversationResponse>('/api/conversations', {
-          agent: {
-            kind: 'Agent',
-            llm: createTestLLMConfig(),
-          },
-          max_iterations: 15,
-          stuck_detection: true,
-          workspace: {
-            type: 'local',
-            working_dir: config.agentWorkspaceDir,
-          },
-        });
+        const createResponse = await httpClient.post<CreateConversationResponse>(
+          '/api/conversations',
+          {
+            agent: {
+              kind: 'Agent',
+              llm: createTestLLMConfig(),
+            },
+            max_iterations: 15,
+            stuck_detection: true,
+            workspace: {
+              type: 'local',
+              working_dir: config.agentWorkspaceDir,
+            },
+          }
+        );
 
         const conversationId = createResponse.data.id;
         const eventTypes = new Set<string>();
@@ -181,18 +187,21 @@ describe('WebSocket Integration Tests', () => {
         if (SKIP_TESTS) return;
 
         // Create a conversation
-        const createResponse = await httpClient.post<CreateConversationResponse>('/api/conversations', {
-          agent: {
-            kind: 'Agent',
-            llm: createTestLLMConfig(),
-          },
-          max_iterations: 5,
-          stuck_detection: true,
-          workspace: {
-            type: 'local',
-            working_dir: config.agentWorkspaceDir,
-          },
-        });
+        const createResponse = await httpClient.post<CreateConversationResponse>(
+          '/api/conversations',
+          {
+            agent: {
+              kind: 'Agent',
+              llm: createTestLLMConfig(),
+            },
+            max_iterations: 5,
+            stuck_detection: true,
+            workspace: {
+              type: 'local',
+              working_dir: config.agentWorkspaceDir,
+            },
+          }
+        );
 
         const conversationId = createResponse.data.id;
         let connectionCount = 0;
@@ -247,18 +256,21 @@ describe('WebSocket Integration Tests', () => {
         if (SKIP_TESTS) return;
 
         // Create a conversation
-        const createResponse = await httpClient.post<CreateConversationResponse>('/api/conversations', {
-          agent: {
-            kind: 'Agent',
-            llm: createTestLLMConfig(),
-          },
-          max_iterations: 5,
-          stuck_detection: true,
-          workspace: {
-            type: 'local',
-            working_dir: config.agentWorkspaceDir,
-          },
-        });
+        const createResponse = await httpClient.post<CreateConversationResponse>(
+          '/api/conversations',
+          {
+            agent: {
+              kind: 'Agent',
+              llm: createTestLLMConfig(),
+            },
+            max_iterations: 5,
+            stuck_detection: true,
+            workspace: {
+              type: 'local',
+              working_dir: config.agentWorkspaceDir,
+            },
+          }
+        );
 
         const conversationId = createResponse.data.id;
         const receivedEvents: Event[] = [];
@@ -309,18 +321,21 @@ describe('WebSocket Integration Tests', () => {
         if (SKIP_TESTS) return;
 
         // Create a conversation
-        const createResponse = await httpClient.post<CreateConversationResponse>('/api/conversations', {
-          agent: {
-            kind: 'Agent',
-            llm: createTestLLMConfig(),
-          },
-          max_iterations: 10,
-          stuck_detection: true,
-          workspace: {
-            type: 'local',
-            working_dir: config.agentWorkspaceDir,
-          },
-        });
+        const createResponse = await httpClient.post<CreateConversationResponse>(
+          '/api/conversations',
+          {
+            agent: {
+              kind: 'Agent',
+              llm: createTestLLMConfig(),
+            },
+            max_iterations: 10,
+            stuck_detection: true,
+            workspace: {
+              type: 'local',
+              working_dir: config.agentWorkspaceDir,
+            },
+          }
+        );
 
         const conversationId = createResponse.data.id;
         const messageEvents: Event[] = [];
@@ -371,18 +386,21 @@ describe('WebSocket Integration Tests', () => {
         if (SKIP_TESTS) return;
 
         // Create a conversation
-        const createResponse = await httpClient.post<CreateConversationResponse>('/api/conversations', {
-          agent: {
-            kind: 'Agent',
-            llm: createTestLLMConfig(),
-          },
-          max_iterations: 15,
-          stuck_detection: true,
-          workspace: {
-            type: 'local',
-            working_dir: config.agentWorkspaceDir,
-          },
-        });
+        const createResponse = await httpClient.post<CreateConversationResponse>(
+          '/api/conversations',
+          {
+            agent: {
+              kind: 'Agent',
+              llm: createTestLLMConfig(),
+            },
+            max_iterations: 15,
+            stuck_detection: true,
+            workspace: {
+              type: 'local',
+              working_dir: config.agentWorkspaceDir,
+            },
+          }
+        );
 
         const conversationId = createResponse.data.id;
         const actionEvents: Event[] = [];
@@ -434,18 +452,21 @@ describe('WebSocket Integration Tests', () => {
         if (SKIP_TESTS) return;
 
         // Create a conversation
-        const createResponse = await httpClient.post<CreateConversationResponse>('/api/conversations', {
-          agent: {
-            kind: 'Agent',
-            llm: createTestLLMConfig(),
-          },
-          max_iterations: 15,
-          stuck_detection: true,
-          workspace: {
-            type: 'local',
-            working_dir: config.agentWorkspaceDir,
-          },
-        });
+        const createResponse = await httpClient.post<CreateConversationResponse>(
+          '/api/conversations',
+          {
+            agent: {
+              kind: 'Agent',
+              llm: createTestLLMConfig(),
+            },
+            max_iterations: 15,
+            stuck_detection: true,
+            workspace: {
+              type: 'local',
+              working_dir: config.agentWorkspaceDir,
+            },
+          }
+        );
 
         const conversationId = createResponse.data.id;
         const observationEvents: Event[] = [];
@@ -499,18 +520,21 @@ describe('WebSocket Integration Tests', () => {
         if (SKIP_TESTS) return;
 
         // Create a conversation
-        const createResponse = await httpClient.post<CreateConversationResponse>('/api/conversations', {
-          agent: {
-            kind: 'Agent',
-            llm: createTestLLMConfig(),
-          },
-          max_iterations: 10,
-          stuck_detection: true,
-          workspace: {
-            type: 'local',
-            working_dir: config.agentWorkspaceDir,
-          },
-        });
+        const createResponse = await httpClient.post<CreateConversationResponse>(
+          '/api/conversations',
+          {
+            agent: {
+              kind: 'Agent',
+              llm: createTestLLMConfig(),
+            },
+            max_iterations: 10,
+            stuck_detection: true,
+            workspace: {
+              type: 'local',
+              working_dir: config.agentWorkspaceDir,
+            },
+          }
+        );
 
         const conversationId = createResponse.data.id;
         const stateUpdateEvents: Event[] = [];

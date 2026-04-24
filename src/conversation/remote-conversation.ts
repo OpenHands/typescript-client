@@ -273,7 +273,6 @@ export class RemoteConversation implements IConversation {
     return response.data.response;
   }
 
-
   /**
    * Get the agent's final response text for this conversation.
    */

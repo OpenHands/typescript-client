@@ -57,13 +57,21 @@ export class BashClient {
     );
   }
 
-  async startCommand(request: string | ExecuteBashRequest, cwd?: string, timeout?: number): Promise<BashCommand> {
+  async startCommand(
+    request: string | ExecuteBashRequest,
+    cwd?: string,
+    timeout?: number
+  ): Promise<BashCommand> {
     const payload = this.normalizeRequest(request, cwd, timeout);
     const response = await this.client.post<BashCommand>('/api/bash/start_bash_command', payload);
     return response.data;
   }
 
-  async executeCommand(request: string | ExecuteBashRequest, cwd?: string, timeout?: number): Promise<BashOutput> {
+  async executeCommand(
+    request: string | ExecuteBashRequest,
+    cwd?: string,
+    timeout?: number
+  ): Promise<BashOutput> {
     const payload = this.normalizeRequest(request, cwd, timeout);
     const response = await this.client.post<BashOutput>('/api/bash/execute_bash_command', payload, {
       timeout: ((payload.timeout || 30) + 10) * 1000,
