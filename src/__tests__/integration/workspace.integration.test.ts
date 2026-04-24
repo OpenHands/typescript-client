@@ -31,7 +31,6 @@ describe('RemoteWorkspace Integration Tests', () => {
     config = getTestConfig();
     workspace = new Workspace({
       host: config.agentServerUrl,
-      ...(config.apiKey ? { apiKey: config.apiKey } : {}),
       workingDir: config.agentWorkspaceDir,
     });
   });

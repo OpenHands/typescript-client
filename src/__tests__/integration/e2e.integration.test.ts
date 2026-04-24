@@ -61,7 +61,6 @@ describe('End-to-End Integration Tests', () => {
         const agent = new Agent({ llm: createTestLLMConfig() });
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -101,7 +100,6 @@ describe('End-to-End Integration Tests', () => {
         const agent = new Agent({ llm: createTestLLMConfig() });
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -142,7 +140,6 @@ describe('End-to-End Integration Tests', () => {
         const agent = new Agent({ llm: createTestLLMConfig() });
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -195,7 +192,6 @@ describe('End-to-End Integration Tests', () => {
         const agent = new Agent({ llm: createTestLLMConfig() });
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -237,7 +233,6 @@ describe('End-to-End Integration Tests', () => {
         const agent = new Agent({ llm: createTestLLMConfig() });
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -284,7 +279,6 @@ describe('End-to-End Integration Tests', () => {
         const agent = new Agent({ llm: createTestLLMConfig() });
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -325,7 +319,6 @@ describe('End-to-End Integration Tests', () => {
         const agent = new Agent({ llm: createTestLLMConfig() });
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -375,7 +368,6 @@ describe('End-to-End Integration Tests', () => {
         const agent = new Agent({ llm: createTestLLMConfig() });
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -426,7 +418,6 @@ describe('End-to-End Integration Tests', () => {
         const agent = new Agent({ llm: createTestLLMConfig() });
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -471,7 +462,6 @@ describe('End-to-End Integration Tests', () => {
         const agent = new Agent({ llm: createTestLLMConfig() });
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -527,7 +517,6 @@ describe('End-to-End Integration Tests', () => {
         const agent = new Agent({ llm: createTestLLMConfig() });
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -590,7 +579,6 @@ describe('End-to-End Integration Tests', () => {
         const agent = new Agent({ llm: createTestLLMConfig() });
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 

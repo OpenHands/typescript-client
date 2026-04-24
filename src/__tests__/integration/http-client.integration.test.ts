@@ -36,7 +36,6 @@ describe('HttpClient Integration Tests', () => {
     config = getTestConfig();
     client = new HttpClient({
       baseUrl: config.agentServerUrl,
-      ...(config.apiKey ? { apiKey: config.apiKey } : {}),
       timeout: 30000,
     });
   });
@@ -184,7 +183,6 @@ describe('HttpClient Integration Tests', () => {
 
         const shortTimeoutClient = new HttpClient({
           baseUrl: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           timeout: 1, // 1ms timeout - should fail
         });
 

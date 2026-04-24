@@ -31,7 +31,6 @@ describe('WebSocket Integration Tests', () => {
     config = getTestConfig();
     httpClient = new HttpClient({
       baseUrl: config.agentServerUrl,
-      ...(config.apiKey ? { apiKey: config.apiKey } : {}),
       timeout: 60000,
     });
   });
@@ -71,7 +70,6 @@ describe('WebSocket Integration Tests', () => {
         // Create WebSocket client
         const wsClient = new WebSocketCallbackClient({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           conversationId,
           callback: (event) => {
             receivedEvents.push(event);
@@ -143,7 +141,6 @@ describe('WebSocket Integration Tests', () => {
 
         const wsClient = new WebSocketCallbackClient({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           conversationId,
           callback: (event) => {
             eventTypes.add(event.kind);
@@ -209,7 +206,6 @@ describe('WebSocket Integration Tests', () => {
 
         const wsClient = new WebSocketCallbackClient({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           conversationId,
           callback: (event) => {
             receivedEvents.push(event);
@@ -277,7 +273,6 @@ describe('WebSocket Integration Tests', () => {
 
         const wsClient = new WebSocketCallbackClient({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           conversationId,
           callback: (event) => {
             receivedEvents.push(event);
@@ -342,7 +337,6 @@ describe('WebSocket Integration Tests', () => {
 
         const wsClient = new WebSocketCallbackClient({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           conversationId,
           callback: (event) => {
             if (event.kind === 'MessageEvent') {
@@ -407,7 +401,6 @@ describe('WebSocket Integration Tests', () => {
 
         const wsClient = new WebSocketCallbackClient({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           conversationId,
           callback: (event) => {
             if (event.kind === 'ActionEvent') {
@@ -473,7 +466,6 @@ describe('WebSocket Integration Tests', () => {
 
         const wsClient = new WebSocketCallbackClient({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           conversationId,
           callback: (event) => {
             if (event.kind === 'ObservationEvent') {
@@ -541,7 +533,6 @@ describe('WebSocket Integration Tests', () => {
 
         const wsClient = new WebSocketCallbackClient({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           conversationId,
           callback: (event) => {
             if (event.kind === 'ConversationStateUpdateEvent') {

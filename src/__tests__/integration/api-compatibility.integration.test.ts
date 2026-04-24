@@ -71,7 +71,6 @@ describe('API Compatibility Integration Tests', () => {
 
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -99,7 +98,6 @@ describe('API Compatibility Integration Tests', () => {
 
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -133,7 +131,6 @@ describe('API Compatibility Integration Tests', () => {
 
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -172,7 +169,6 @@ describe('API Compatibility Integration Tests', () => {
 
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -208,7 +204,6 @@ describe('API Compatibility Integration Tests', () => {
 
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -240,7 +235,6 @@ describe('API Compatibility Integration Tests', () => {
 
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -289,7 +283,6 @@ describe('API Compatibility Integration Tests', () => {
 
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -336,7 +329,6 @@ describe('API Compatibility Integration Tests', () => {
 
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -379,7 +371,6 @@ describe('API Compatibility Integration Tests', () => {
 
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -431,7 +422,6 @@ describe('API Compatibility Integration Tests', () => {
 
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 

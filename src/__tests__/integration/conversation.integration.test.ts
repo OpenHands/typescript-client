@@ -54,7 +54,6 @@ describe('Conversation Integration Tests', () => {
 
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -85,7 +84,6 @@ describe('Conversation Integration Tests', () => {
 
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -118,7 +116,6 @@ describe('Conversation Integration Tests', () => {
 
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -151,7 +148,6 @@ describe('Conversation Integration Tests', () => {
 
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -180,7 +176,6 @@ describe('Conversation Integration Tests', () => {
 
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -207,7 +202,6 @@ describe('Conversation Integration Tests', () => {
 
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -242,7 +236,6 @@ describe('Conversation Integration Tests', () => {
 
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -280,7 +273,6 @@ describe('Conversation Integration Tests', () => {
 
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -318,7 +310,6 @@ describe('Conversation Integration Tests', () => {
 
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -369,7 +360,6 @@ describe('Conversation Integration Tests', () => {
 
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -419,7 +409,6 @@ describe('Conversation Integration Tests', () => {
 
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -466,7 +455,6 @@ describe('Conversation Integration Tests', () => {
 
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -507,7 +495,6 @@ describe('Conversation Integration Tests', () => {
 
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -547,7 +534,6 @@ describe('Conversation Integration Tests', () => {
 
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 
@@ -603,7 +589,6 @@ describe('Conversation Integration Tests', () => {
 
         const workspace = new Workspace({
           host: config.agentServerUrl,
-          ...(config.apiKey ? { apiKey: config.apiKey } : {}),
           workingDir: config.agentWorkspaceDir,
         });
 

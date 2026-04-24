@@ -7,7 +7,6 @@ export interface ServerTestConfig {
   agentWorkspaceDir: string;
   hostWorkspaceDir: string;
   testTimeout: number;
-  apiKey?: string;
 }
 
 export interface TestConfig extends ServerTestConfig {
@@ -22,7 +21,6 @@ export function getServerTestConfig(): ServerTestConfig {
     agentWorkspaceDir: process.env.AGENT_WORKSPACE_DIR || '/workspace',
     hostWorkspaceDir: process.env.HOST_WORKSPACE_DIR || '/tmp/agent-workspace',
     testTimeout: parseInt(process.env.TEST_TIMEOUT || '120000', 10),
-    apiKey: process.env.AGENT_SERVER_API_KEY,
   };
 }
 

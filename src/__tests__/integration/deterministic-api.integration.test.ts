@@ -34,40 +34,31 @@ function createDummyAgent(): Agent {
 describe('Deterministic API Integration Tests', () => {
   const manager = new ConversationManager({
     host: config.agentServerUrl,
-    ...(config.apiKey ? { apiKey: config.apiKey } : {}),
   });
   const serverClient = new ServerClient({
     host: config.agentServerUrl,
-    ...(config.apiKey ? { apiKey: config.apiKey } : {}),
   });
   const llmClient = new LLMMetadataClient({
     host: config.agentServerUrl,
-    ...(config.apiKey ? { apiKey: config.apiKey } : {}),
   });
   const settingsClient = new SettingsClient({
     host: config.agentServerUrl,
-    ...(config.apiKey ? { apiKey: config.apiKey } : {}),
   });
   const skillsClient = new SkillsClient({
     host: config.agentServerUrl,
-    ...(config.apiKey ? { apiKey: config.apiKey } : {}),
   });
   const toolClient = new ToolClient({
     host: config.agentServerUrl,
-    ...(config.apiKey ? { apiKey: config.apiKey } : {}),
   });
   const vscodeClient = new VSCodeClient({
     host: config.agentServerUrl,
-    ...(config.apiKey ? { apiKey: config.apiKey } : {}),
   });
   const desktopClient = new DesktopClient({
     host: config.agentServerUrl,
-    ...(config.apiKey ? { apiKey: config.apiKey } : {}),
   });
   const workspace = new Workspace({
     host: config.agentServerUrl,
     workingDir: config.agentWorkspaceDir,
-    ...(config.apiKey ? { apiKey: config.apiKey } : {}),
   });
 
   afterAll(() => {

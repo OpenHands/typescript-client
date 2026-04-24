@@ -7,7 +7,6 @@ const config = getServerTestConfig();
 describe('Bash API Integration Tests', () => {
   const bashClient = new BashClient({
     host: config.agentServerUrl,
-    ...(config.apiKey ? { apiKey: config.apiKey } : {}),
   });
 
   afterAll(() => {
@@ -54,7 +53,6 @@ describe('Bash API Integration Tests', () => {
       const receivedEvents: Array<{ kind?: string; stdout?: string | null }> = [];
       const wsClient = new BashWebSocketClient({
         host: config.agentServerUrl,
-        ...(config.apiKey ? { apiKey: config.apiKey } : {}),
         callback: (event) => {
           receivedEvents.push(event);
         },
