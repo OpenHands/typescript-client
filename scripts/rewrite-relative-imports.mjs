@@ -1,3 +1,4 @@
+import { existsSync, statSync } from 'node:fs';
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,9 +10,15 @@ const TARGET_SUFFIXES = ['.js', '.d.ts', '.d.mts', '.d.cts'];
 
 const hasKnownExtension = (specifier) => KNOWN_EXTENSIONS.has(path.posix.extname(specifier));
 
-const normalizeRelativeSpecifier = (specifier) => {
+const normalizeRelativeSpecifier = (specifier, filePath) => {
   if (!specifier.startsWith('.') || hasKnownExtension(specifier)) {
     return specifier;
+  }
+
+  const resolvedSpecifierPath = path.resolve(path.dirname(filePath), specifier);
+
+  if (existsSync(resolvedSpecifierPath) && statSync(resolvedSpecifierPath).isDirectory()) {
+    return `${specifier}/index.js`;
   }
 
   return `${specifier}.js`;
@@ -38,7 +45,7 @@ const rewriteFile = async (filePath) => {
   const rewritten = original.replace(
     IMPORT_EXPORT_SPECIFIER_PATTERN,
     (_fullMatch, prefix, quote, specifier) => {
-      const normalizedSpecifier = normalizeRelativeSpecifier(specifier);
+      const normalizedSpecifier = normalizeRelativeSpecifier(specifier, filePath);
       return `${prefix}${quote}${normalizedSpecifier}${quote}`;
     }
   );

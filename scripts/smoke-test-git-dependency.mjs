@@ -36,10 +36,11 @@ try {
       '--input-type=module',
       '-e',
       [
-        "import { Conversation } from '@openhands/typescript-client';",
         "import { ServerClient } from '@openhands/typescript-client/clients';",
         "import { HttpClient } from '@openhands/typescript-client/client/http-client';",
-        'console.log(typeof Conversation, typeof ServerClient, typeof HttpClient);',
+        "import { RemoteEventsList } from '@openhands/typescript-client/events/remote-events-list';",
+        "import { RemoteWorkspace } from '@openhands/typescript-client/workspace/remote-workspace';",
+        'console.log(typeof ServerClient, typeof HttpClient, typeof RemoteEventsList, typeof RemoteWorkspace);',
       ].join('\n'),
     ],
     {
