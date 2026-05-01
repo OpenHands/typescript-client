@@ -28,6 +28,40 @@ export interface SettingsSchema {
   sections: Array<Record<string, unknown>>;
 }
 
+export type SettingsValue =
+  | boolean
+  | number
+  | string
+  | null
+  | SettingsValue[]
+  | { [key: string]: SettingsValue };
+
+export interface SettingsResponse {
+  agent_settings: Record<string, SettingsValue>;
+  conversation_settings: Record<string, SettingsValue>;
+  llm_api_key_is_set: boolean;
+}
+
+export interface SettingsUpdateRequest {
+  agent_settings_diff?: Record<string, SettingsValue>;
+  conversation_settings_diff?: Record<string, SettingsValue>;
+}
+
+export interface CustomSecretCreate {
+  name: string;
+  value: string;
+  description?: string | null;
+}
+
+export interface CustomSecretResponse {
+  name: string;
+  description?: string | null;
+}
+
+export interface SecretsResponse {
+  secrets: CustomSecretResponse[];
+}
+
 export interface ExposedUrl {
   name: string;
   url: string;
