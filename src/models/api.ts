@@ -6,6 +6,10 @@ export interface AliveStatus {
   status: string;
 }
 
+export interface HealthStatus {
+  status: string;
+}
+
 export interface ReadyStatus {
   status: string;
   message?: string;

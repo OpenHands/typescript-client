@@ -58,7 +58,7 @@ describe('Deterministic API Integration Tests', () => {
 
       expect(root).toBeDefined();
       expect(alive.status).toBe('ok');
-      expect(health).toBe('OK');
+      expect(health.status).toBe('ok');
       expect(['ready', 'initializing']).toContain(ready.status);
       expect(info.version).toBeDefined();
       expect(Array.isArray(providers)).toBe(true);

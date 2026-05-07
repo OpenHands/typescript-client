@@ -18,7 +18,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/HealthStatus"
+                }
               }
             }
           }
@@ -38,8 +40,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "string",
-                  "title": "Response Health Health Get"
+                  "$ref": "#/components/schemas/HealthStatus"
                 }
               }
             }
@@ -2177,7 +2178,7 @@
         },
         "type": "object",
         "title": "AgentContext",
-        "description": "Central structure for managing prompt extension.\n\nAgentContext unifies all the contextual inputs that shape how the system\nextends and interprets user prompts. It combines both static environment\ndetails and dynamic, user-activated extensions from skills.\n\nSpecifically, it provides:\n- **Repository context / Repo Skills**: Information about the active codebase,\n  branches, and repo-specific instructions contributed by repo skills.\n- **Runtime context**: Current execution environment (hosts, working\n  directory, secrets, date, etc.).\n- **Conversation instructions**: Optional task- or channel-specific rules\n  that constrain or guide the agent’s behavior across the session.\n- **Knowledge Skills**: Extensible components that can be triggered by user input\n  to inject knowledge or domain-specific guidance.\n\nTogether, these elements make AgentContext the primary container responsible\nfor assembling, formatting, and injecting all prompt-relevant context into\nLLM interactions."
+        "description": "Central structure for managing prompt extension.\n\nAgentContext unifies all the contextual inputs that shape how the system\nextends and interprets user prompts. It combines both static environment\ndetails and dynamic, user-activated extensions from skills.\n\nSpecifically, it provides:\n- **Repository context / Repo Skills**: Information about the active codebase,\n  branches, and repo-specific instructions contributed by repo skills.\n- **Runtime context**: Current execution environment (hosts, working\n  directory, secrets, date, etc.).\n- **Conversation instructions**: Optional task- or channel-specific rules\n  that constrain or guide the agent\u2019s behavior across the session.\n- **Knowledge Skills**: Extensible components that can be triggered by user input\n  to inject knowledge or domain-specific guidance.\n\nTogether, these elements make AgentContext the primary container responsible\nfor assembling, formatting, and injecting all prompt-relevant context into\nLLM interactions."
       },
       "AgentErrorEvent": {
         "properties": {
@@ -3415,7 +3416,7 @@
               }
             ],
             "title": "Timeout",
-            "description": "Optional. Sets a maximum time limit (in seconds) for running the command. If the command takes longer than this limit, you’ll be asked whether to continue or stop it. If you don’t set a value, the command will instead pause and ask for confirmation when it produces no new output for 30 seconds. Use a higher value if the command is expected to take a long time (like installation or testing), or if it has a known fixed duration (like sleep)."
+            "description": "Optional. Sets a maximum time limit (in seconds) for running the command. If the command takes longer than this limit, you\u2019ll be asked whether to continue or stop it. If you don\u2019t set a value, the command will instead pause and ask for confirmation when it produces no new output for 30 seconds. Use a higher value if the command is expected to take a long time (like installation or testing), or if it has a known fixed duration (like sleep)."
           },
           "reset": {
             "type": "boolean",
@@ -6251,6 +6252,19 @@
           }
         },
         "title": "Observation"
+      },
+      "HealthStatus": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "HealthStatus"
       }
     }
   }
