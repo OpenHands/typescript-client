@@ -201,6 +201,20 @@ describe('Deterministic API Integration Tests', () => {
 
         expect(changes.some((change) => String(change.path).includes('tracked.txt'))).toBe(true);
         expect(diff.modified || diff.diff).toContain('line2');
+
+        // ref='HEAD' should yield git status semantics: the working-tree edit
+        // to tracked.txt is present, while the file added in the initial
+        // commit (only differing from the empty tree, not from HEAD) is not
+        // reported as a fresh addition.
+        const headChanges = await workspace.gitChanges(repoDir, { ref: 'HEAD' });
+        expect(
+          headChanges.some((change) => String(change.path).includes('tracked.txt'))
+        ).toBe(true);
+
+        const headDiff = await workspace.gitDiff(trackedFile, { ref: 'HEAD' });
+        // Original at HEAD is just "line1"; modified now contains line2 too.
+        expect(headDiff.original ?? '').toContain('line1');
+        expect(headDiff.modified ?? '').toContain('line2');
       } finally {
         deleteWorkspaceFile(fileName);
         await workspace.executeCommand(`rm -rf ${repoDir}`);
