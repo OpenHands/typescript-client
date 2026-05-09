@@ -94,14 +94,14 @@ export interface VSCodeStatusResponse {
 
 export interface ProfileInfo {
   name: string;
-  model?: string | null;
-  base_url?: string | null;
-  api_key_set?: boolean;
+  model: string | null;
+  base_url: string | null;
+  api_key_set: boolean;
 }
 
 export interface ProfileListResponse {
   profiles: ProfileInfo[];
-  active_profile?: string | null;
+  active_profile: string | null;
 }
 
 export interface ProfileDetailResponse {
