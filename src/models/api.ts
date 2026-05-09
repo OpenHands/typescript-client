@@ -2,6 +2,8 @@
  * Models for auxiliary Agent Server APIs.
  */
 
+import { LLM } from '../types/base';
+
 export interface AliveStatus {
   status: string;
 }
@@ -120,7 +122,7 @@ export interface ActivateProfileResponse {
 }
 
 export interface SaveProfileRequest {
-  llm: Record<string, unknown>;
+  llm: LLM;
   include_secrets?: boolean;
 }
 
