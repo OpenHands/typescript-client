@@ -89,3 +89,36 @@ export interface VSCodeStatusResponse {
   enabled: boolean;
   message?: string;
 }
+
+export interface ProfileInfo {
+  name: string;
+  model?: string | null;
+  base_url?: string | null;
+  api_key_set?: boolean;
+}
+
+export interface ProfileListResponse {
+  profiles: ProfileInfo[];
+}
+
+export interface ProfileDetailResponse {
+  name: string;
+  config: Record<string, unknown>;
+  api_key_set: boolean;
+}
+
+export interface ProfileMutationResponse {
+  name: string;
+  message: string;
+}
+
+export interface SaveProfileRequest {
+  llm: Record<string, unknown>;
+  include_secrets?: boolean;
+}
+
+export interface RenameProfileRequest {
+  new_name: string;
+}
+
+export type ExposeSecretsMode = 'encrypted' | 'plaintext';

@@ -247,6 +247,13 @@ export type {
   DesktopUrlResponse,
   VSCodeUrlResponse,
   VSCodeStatusResponse,
+  ProfileInfo,
+  ProfileListResponse,
+  ProfileDetailResponse,
+  ProfileMutationResponse,
+  SaveProfileRequest,
+  RenameProfileRequest,
+  ExposeSecretsMode,
 } from './models/api';
 
 export type { WebSocketClientOptions } from './events/websocket-client';
