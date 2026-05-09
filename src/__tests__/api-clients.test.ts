@@ -1,5 +1,11 @@
 import { ConversationManager, HttpClient, Workspace } from '../index';
-import { BashClient, ServerClient, SettingsClient, SkillsClient } from '../clients';
+import {
+  BashClient,
+  ConversationClient,
+  ServerClient,
+  SettingsClient,
+  SkillsClient,
+} from '../clients';
 
 const originalFetch = global.fetch;
 
@@ -176,6 +182,26 @@ describe('Auxiliary API clients', () => {
       5,
       'http://example.com/api/profiles/slow',
       expect.objectContaining({ method: 'DELETE' })
+    );
+  });
+
+  it('ConversationClient.switchProfile posts the profile name', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const client = new ConversationClient({ host: 'http://example.com' });
+    await client.switchProfile('conversation-1', 'fast');
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/conversations/conversation-1/switch_profile',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ profile_name: 'fast' }),
+      })
     );
   });
 
