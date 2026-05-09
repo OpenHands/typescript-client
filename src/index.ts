@@ -251,6 +251,7 @@ export type {
   ProfileListResponse,
   ProfileDetailResponse,
   ProfileMutationResponse,
+  ActivateProfileResponse,
   SaveProfileRequest,
   RenameProfileRequest,
   ExposeSecretsMode,

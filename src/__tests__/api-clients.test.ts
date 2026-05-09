@@ -327,6 +327,32 @@ describe('Auxiliary API clients', () => {
     );
   });
 
+  it('ProfilesClient.activateProfile POSTs to the activate endpoint', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          name: 'default',
+          message: "Profile 'default' activated and applied to current settings",
+          llm_applied: true,
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      )
+    ) as typeof fetch;
+
+    const client = new ProfilesClient({ host: 'http://example.com' });
+    const result = await client.activateProfile('my profile');
+
+    expect(result.name).toBe('default');
+    expect(result.llm_applied).toBe(true);
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/profiles/my%20profile/activate',
+      expect.objectContaining({
+        method: 'POST',
+        body: '{}',
+      })
+    );
+  });
+
   it('RemoteConversation.switchLlm POSTs the llm to the switch_llm endpoint', async () => {
     global.fetch = jest.fn().mockResolvedValue(
       new Response(JSON.stringify({ success: true }), {

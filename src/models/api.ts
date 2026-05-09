@@ -99,6 +99,7 @@ export interface ProfileInfo {
 
 export interface ProfileListResponse {
   profiles: ProfileInfo[];
+  active_profile?: string | null;
 }
 
 export interface ProfileDetailResponse {
@@ -110,6 +111,12 @@ export interface ProfileDetailResponse {
 export interface ProfileMutationResponse {
   name: string;
   message: string;
+}
+
+export interface ActivateProfileResponse {
+  name: string;
+  message: string;
+  llm_applied: boolean;
 }
 
 export interface SaveProfileRequest {

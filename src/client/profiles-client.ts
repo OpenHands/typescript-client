@@ -1,5 +1,6 @@
 import { HttpClient } from './http-client';
 import {
+  ActivateProfileResponse,
   ExposeSecretsMode,
   ProfileDetailResponse,
   ProfileListResponse,
@@ -74,6 +75,14 @@ export class ProfilesClient {
     const response = await this.client.post<ProfileMutationResponse>(
       `/api/profiles/${encodeURIComponent(name)}/rename`,
       { new_name: newName }
+    );
+    return response.data;
+  }
+
+  async activateProfile(name: string): Promise<ActivateProfileResponse> {
+    const response = await this.client.post<ActivateProfileResponse>(
+      `/api/profiles/${encodeURIComponent(name)}/activate`,
+      {}
     );
     return response.data;
   }
