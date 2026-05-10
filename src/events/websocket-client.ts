@@ -4,24 +4,19 @@
 
 import { Event, ConversationCallbackType } from '../types/base';
 
-// Use native WebSocket in browser, ws library in Node.js
-let WebSocketImpl: any;
-
-if (typeof window !== 'undefined' && window.WebSocket) {
-  // Browser environment
-  WebSocketImpl = window.WebSocket;
-} else {
-  // Node.js environment
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const ws = require('ws');
-    WebSocketImpl = ws;
-  } catch {
-    throw new Error(
-      'WebSocket implementation not available. Install ws package for Node.js environments.'
-    );
-  }
-}
+// Use whatever WebSocket the runtime exposes on `globalThis`. This covers
+// browsers, Web Workers, and Node.js >= 22 (where WHATWG WebSocket is on by
+// default; Node 21 exposes it under `--experimental-websocket`).
+//
+// We intentionally do NOT fall back to `require('ws')` here. This package is
+// published as ESM (`"type": "module"`), so `require` is undefined at runtime
+// and the previous fallback always threw at module-load time — breaking
+// *every* Node.js ESM consumer of the library regardless of whether they ever
+// open a WebSocket. Callers on older Node.js without a global `WebSocket`
+// should install `ws` and assign it to `globalThis.WebSocket` before
+// importing this module.
+const WebSocketImpl: typeof WebSocket | undefined = (globalThis as { WebSocket?: typeof WebSocket })
+  .WebSocket;
 
 /**
  * Error callback type for reporting non-fatal errors.
@@ -84,6 +79,13 @@ export class WebSocketCallbackClient {
 
   private connect(): void {
     try {
+      if (!WebSocketImpl) {
+        throw new Error(
+          'No WebSocket implementation found on globalThis. Provide one by polyfilling ' +
+            '`globalThis.WebSocket` (e.g. with the `ws` package) before opening a connection.'
+        );
+      }
+
       // Convert HTTP URL to WebSocket URL
       const url = new URL(this.host);
       const wsScheme = url.protocol === 'https:' ? 'wss:' : 'ws:';

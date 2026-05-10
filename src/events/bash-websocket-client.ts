@@ -5,21 +5,12 @@
 import { BashEvent } from '../models/workspace';
 import { ErrorCallbackType } from './websocket-client';
 
-let WebSocketImpl: any;
-
-if (typeof window !== 'undefined' && window.WebSocket) {
-  WebSocketImpl = window.WebSocket;
-} else {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const ws = require('ws');
-    WebSocketImpl = ws;
-  } catch {
-    throw new Error(
-      'WebSocket implementation not available. Install ws package for Node.js environments.'
-    );
-  }
-}
+// See `websocket-client.ts` for why we rely on `globalThis.WebSocket` instead
+// of falling back to `require('ws')` — short version: this package is ESM,
+// `require` is undefined at runtime, and the fallback used to throw at module
+// load time for every Node.js consumer.
+const WebSocketImpl: typeof WebSocket | undefined = (globalThis as { WebSocket?: typeof WebSocket })
+  .WebSocket;
 
 export interface BashWebSocketClientOptions {
   host: string;
@@ -75,6 +66,13 @@ export class BashWebSocketClient {
 
   private connect(): void {
     try {
+      if (!WebSocketImpl) {
+        throw new Error(
+          'No WebSocket implementation found on globalThis. Provide one by polyfilling ' +
+            '`globalThis.WebSocket` (e.g. with the `ws` package) before opening a connection.'
+        );
+      }
+
       const url = new URL(this.host);
       const wsScheme = url.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = `${wsScheme}//${url.host}${url.pathname.replace(/\/$/, '')}/sockets/bash-events`;
