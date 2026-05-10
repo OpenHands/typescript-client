@@ -1,5 +1,13 @@
 import { HttpClient } from './http-client';
-import { SettingsSchema } from '../models/api';
+import type {
+  ExposeSecretsMode as ApiExposeSecretsMode,
+  ProfileDetailResponse,
+  ProfileInfo,
+  ProfileListResponse,
+  ProfileMutationResponse,
+  SaveProfileRequest,
+  SettingsSchema,
+} from '../models/api';
 
 export interface SettingsClientOptions {
   host: string;
@@ -7,34 +15,12 @@ export interface SettingsClientOptions {
   timeout?: number;
 }
 
-export type ExposeSecretsMode = 'encrypted' | 'plaintext';
-
-export interface LLMProfileSummary {
-  name: string;
-  model: string | null;
-  base_url: string | null;
-  api_key_set: boolean;
-}
-
-export interface LLMProfileListResponse {
-  profiles: LLMProfileSummary[];
-}
-
-export interface LLMProfileDetailResponse {
-  name: string;
-  config: Record<string, unknown>;
-  api_key_set: boolean;
-}
-
-export interface SaveLLMProfileRequest {
-  llm: Record<string, unknown>;
-  include_secrets?: boolean;
-}
-
-export interface LLMProfileMutationResponse {
-  name: string;
-  message: string;
-}
+export type ExposeSecretsMode = ApiExposeSecretsMode;
+export type LLMProfileSummary = ProfileInfo;
+export type LLMProfileListResponse = ProfileListResponse;
+export type LLMProfileDetailResponse = ProfileDetailResponse;
+export type SaveLLMProfileRequest = SaveProfileRequest;
+export type LLMProfileMutationResponse = ProfileMutationResponse;
 
 export class SettingsClient {
   public readonly host: string;
