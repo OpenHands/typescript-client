@@ -185,7 +185,12 @@ export type {
 } from './models/workspace';
 
 // Workspace base types and interface
-export type { IWorkspace, BaseWorkspaceOptions, WorkspaceType } from './workspace/base';
+export type {
+  IWorkspace,
+  BaseWorkspaceOptions,
+  GitQueryOptions,
+  WorkspaceType,
+} from './workspace/base';
 
 // Conversation base types and interface
 export type {
@@ -242,6 +247,14 @@ export type {
   DesktopUrlResponse,
   VSCodeUrlResponse,
   VSCodeStatusResponse,
+  ProfileInfo,
+  ProfileListResponse,
+  ProfileDetailResponse,
+  ProfileMutationResponse,
+  ActivateProfileResponse,
+  SaveProfileRequest,
+  RenameProfileRequest,
+  ExposeSecretsMode,
 } from './models/api';
 
 export type { WebSocketClientOptions } from './events/websocket-client';
