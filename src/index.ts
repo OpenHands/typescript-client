@@ -163,6 +163,20 @@ export type {
 
 export type { AgentOptions } from './agent/agent';
 
+// Generated Agent Server OpenAPI request/response models.
+export type {
+  paths as AgentServerPaths,
+  components as AgentServerComponents,
+  operations as AgentServerOperations,
+  StartConversationRequest,
+  StartAcpConversationRequest as StartACPConversationRequest,
+  ConversationInfo as AgentServerConversationInfo,
+  ConversationPage,
+  SettingsResponse,
+  LocalWorkspaceInput,
+  AgentBaseInput,
+} from './generated/agent-server-api';
+
 export { EventSortOrder, AgentExecutionStatus, ConversationExecutionStatus } from './types/base';
 export { ConversationSortOrder } from './models/conversation';
 

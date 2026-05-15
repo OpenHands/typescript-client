@@ -8,6 +8,10 @@ import type {
   ConversationSearchResponse,
   UpdateConversationRequest,
 } from '../models/conversation';
+import type {
+  ConversationInfo as AgentServerConversationInfo,
+  StartConversationRequest,
+} from '../generated/agent-server-api';
 
 export interface ConversationClientOptions {
   host: string;
@@ -15,7 +19,7 @@ export interface ConversationClientOptions {
   timeout?: number;
 }
 
-export type CreateConversationPayload = Record<string, unknown>;
+export type CreateConversationPayload = StartConversationRequest;
 
 export interface SendConversationEventOptions {
   run?: boolean;
@@ -36,7 +40,7 @@ export class ConversationClient {
     });
   }
 
-  async createConversation<TConversation = ConversationInfo>(
+  async createConversation<TConversation = AgentServerConversationInfo>(
     payload: CreateConversationPayload
   ): Promise<TConversation> {
     const response = await this.client.post<TConversation>('/api/conversations', payload);

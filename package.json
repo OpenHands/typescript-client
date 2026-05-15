@@ -17,6 +17,11 @@
       "import": "./dist/clients.js",
       "default": "./dist/clients.js"
     },
+    "./agent-server-api": {
+      "types": "./dist/generated/agent-server-api.d.ts",
+      "import": "./dist/generated/agent-server-api.js",
+      "default": "./dist/generated/agent-server-api.js"
+    },
     "./client/http-client": {
       "types": "./dist/client/http-client.d.ts",
       "import": "./dist/client/http-client.js",
@@ -40,6 +45,7 @@
   },
   "scripts": {
     "build": "tsc && node ./scripts/rewrite-relative-imports.mjs",
+    "generate:openapi-types": "npx --yes openapi-typescript@7.13.0 swagger-doc.json --export-type --default-non-nullable false --root-types --root-types-no-schema-prefix -o src/generated/agent-server-api.ts",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "format": "prettier --write \"src/**/*.ts\" \"examples/**/*.ts\" \"scripts/**/*.mjs\"",

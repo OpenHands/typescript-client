@@ -14,6 +14,20 @@ export { ApiKeysClient } from './client/api-keys-client';
 export { SessionClient } from './client/session-client';
 export { SharedClient } from './client/shared-client';
 
+export type {
+  paths as AgentServerPaths,
+  components as AgentServerComponents,
+  operations as AgentServerOperations,
+  StartConversationRequest,
+  StartAcpConversationRequest as StartACPConversationRequest,
+  ConversationInfo as AgentServerConversationInfo,
+  ConversationPage,
+  SettingsResponse,
+  SettingsUpdateRequest,
+  LocalWorkspaceInput,
+  AgentBaseInput,
+} from './generated/agent-server-api';
+
 export type { ServerClientOptions } from './client/server-client';
 export type { BashClientOptions } from './client/bash-client';
 export type {
