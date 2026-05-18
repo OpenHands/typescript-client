@@ -118,6 +118,16 @@ export {
 } from './hooks';
 export type { HookEvent, HookResult, HookDefinition, HookMatcher, HookConfig } from './hooks';
 
+// Settings — built-in ACP provider registry (mirrors the Python SDK's
+// ``openhands.sdk.settings.acp_providers``).
+export {
+  ACP_PROVIDERS,
+  getACPProvider,
+  detectACPProviderByAgentName,
+  buildSessionModelMeta,
+} from './settings/acp-providers';
+export type { ACPServerKind, ACPProviderInfo } from './settings/acp-providers';
+
 // Agent classes
 export { Agent } from './agent/agent';
 
@@ -366,6 +376,12 @@ import {
   mergeHookConfigs,
   hookConfigToJSON,
 } from './hooks';
+import {
+  ACP_PROVIDERS,
+  getACPProvider,
+  detectACPProviderByAgentName,
+  buildSessionModelMeta,
+} from './settings/acp-providers';
 
 // Default export for convenience
 export default {
@@ -410,4 +426,8 @@ export default {
   hasHooksForEvent,
   mergeHookConfigs,
   hookConfigToJSON,
+  ACP_PROVIDERS,
+  getACPProvider,
+  detectACPProviderByAgentName,
+  buildSessionModelMeta,
 };
