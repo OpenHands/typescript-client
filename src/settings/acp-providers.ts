@@ -92,55 +92,41 @@ export interface ACPProviderInfo {
  * means *the user supplies the raw ``acp_command``*, so there is no static
  * metadata to track.
  */
-export const ACP_PROVIDERS: Readonly<Record<string, ACPProviderInfo>> =
-  Object.freeze({
-    'claude-code': Object.freeze({
-      key: 'claude-code',
-      displayName: 'Claude Code',
-      defaultCommand: Object.freeze([
-        'npx',
-        '-y',
-        '@agentclientprotocol/claude-agent-acp',
-      ]),
-      apiKeyEnvVar: 'ANTHROPIC_API_KEY',
-      baseUrlEnvVar: 'ANTHROPIC_BASE_URL',
-      defaultSessionMode: 'bypassPermissions',
-      agentNamePatterns: Object.freeze(['claude-agent']),
-      supportsSetSessionModel: false,
-      sessionMetaKey: 'claudeCode',
-    }),
-    codex: Object.freeze({
-      key: 'codex',
-      displayName: 'Codex',
-      defaultCommand: Object.freeze([
-        'npx',
-        '-y',
-        '@zed-industries/codex-acp',
-      ]),
-      apiKeyEnvVar: 'OPENAI_API_KEY',
-      baseUrlEnvVar: 'OPENAI_BASE_URL',
-      defaultSessionMode: 'full-access',
-      agentNamePatterns: Object.freeze(['codex-acp']),
-      supportsSetSessionModel: true,
-      sessionMetaKey: null,
-    }),
-    'gemini-cli': Object.freeze({
-      key: 'gemini-cli',
-      displayName: 'Gemini CLI',
-      defaultCommand: Object.freeze([
-        'npx',
-        '-y',
-        '@google/gemini-cli',
-        '--acp',
-      ]),
-      apiKeyEnvVar: 'GEMINI_API_KEY',
-      baseUrlEnvVar: 'GEMINI_BASE_URL',
-      defaultSessionMode: 'yolo',
-      agentNamePatterns: Object.freeze(['gemini-cli']),
-      supportsSetSessionModel: true,
-      sessionMetaKey: null,
-    }),
-  });
+export const ACP_PROVIDERS: Readonly<Record<string, ACPProviderInfo>> = Object.freeze({
+  'claude-code': Object.freeze({
+    key: 'claude-code',
+    displayName: 'Claude Code',
+    defaultCommand: Object.freeze(['npx', '-y', '@agentclientprotocol/claude-agent-acp']),
+    apiKeyEnvVar: 'ANTHROPIC_API_KEY',
+    baseUrlEnvVar: 'ANTHROPIC_BASE_URL',
+    defaultSessionMode: 'bypassPermissions',
+    agentNamePatterns: Object.freeze(['claude-agent']),
+    supportsSetSessionModel: false,
+    sessionMetaKey: 'claudeCode',
+  }),
+  codex: Object.freeze({
+    key: 'codex',
+    displayName: 'Codex',
+    defaultCommand: Object.freeze(['npx', '-y', '@zed-industries/codex-acp']),
+    apiKeyEnvVar: 'OPENAI_API_KEY',
+    baseUrlEnvVar: 'OPENAI_BASE_URL',
+    defaultSessionMode: 'full-access',
+    agentNamePatterns: Object.freeze(['codex-acp']),
+    supportsSetSessionModel: true,
+    sessionMetaKey: null,
+  }),
+  'gemini-cli': Object.freeze({
+    key: 'gemini-cli',
+    displayName: 'Gemini CLI',
+    defaultCommand: Object.freeze(['npx', '-y', '@google/gemini-cli', '--acp']),
+    apiKeyEnvVar: 'GEMINI_API_KEY',
+    baseUrlEnvVar: 'GEMINI_BASE_URL',
+    defaultSessionMode: 'yolo',
+    agentNamePatterns: Object.freeze(['gemini-cli']),
+    supportsSetSessionModel: true,
+    sessionMetaKey: null,
+  }),
+});
 
 /** Return the {@link ACPProviderInfo} for ``key``, or ``undefined`` if unknown. */
 export function getACPProvider(key: string): ACPProviderInfo | undefined {
@@ -157,9 +143,7 @@ export function getACPProvider(key: string): ACPProviderInfo | undefined {
  * Returns ``undefined`` when no pattern matches (e.g. a ``'custom'`` server
  * or an unrecognised third-party ACP implementation).
  */
-export function detectACPProviderByAgentName(
-  agentName: string,
-): ACPProviderInfo | undefined {
+export function detectACPProviderByAgentName(agentName: string): ACPProviderInfo | undefined {
   const lower = agentName.toLowerCase();
   for (const info of Object.values(ACP_PROVIDERS)) {
     if (info.agentNamePatterns.some((pat) => lower.includes(pat))) {
@@ -181,7 +165,7 @@ export function detectACPProviderByAgentName(
  */
 export function buildSessionModelMeta(
   agentName: string,
-  acpModel: string | null | undefined,
+  acpModel: string | null | undefined
 ): Record<string, unknown> {
   if (!acpModel) return {};
   const provider = detectACPProviderByAgentName(agentName);

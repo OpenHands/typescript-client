@@ -8,11 +8,7 @@ import type { ACPProviderInfo, ACPServerKind } from '../index';
 
 describe('ACP_PROVIDERS', () => {
   it('exposes the three built-in providers in stable order', () => {
-    expect(Object.keys(ACP_PROVIDERS)).toEqual([
-      'claude-code',
-      'codex',
-      'gemini-cli',
-    ]);
+    expect(Object.keys(ACP_PROVIDERS)).toEqual(['claude-code', 'codex', 'gemini-cli']);
   });
 
   it('uses the package names the SDK ships with — drift here breaks real spawns', () => {
@@ -40,9 +36,7 @@ describe('ACP_PROVIDERS', () => {
 
   it('pairs each provider with its API-key + base-URL env vars', () => {
     expect(ACP_PROVIDERS['claude-code'].apiKeyEnvVar).toBe('ANTHROPIC_API_KEY');
-    expect(ACP_PROVIDERS['claude-code'].baseUrlEnvVar).toBe(
-      'ANTHROPIC_BASE_URL',
-    );
+    expect(ACP_PROVIDERS['claude-code'].baseUrlEnvVar).toBe('ANTHROPIC_BASE_URL');
     expect(ACP_PROVIDERS['codex'].apiKeyEnvVar).toBe('OPENAI_API_KEY');
     expect(ACP_PROVIDERS['codex'].baseUrlEnvVar).toBe('OPENAI_BASE_URL');
     expect(ACP_PROVIDERS['gemini-cli'].apiKeyEnvVar).toBe('GEMINI_API_KEY');
@@ -53,9 +47,7 @@ describe('ACP_PROVIDERS', () => {
     // claude-agent-acp selects models via session _meta, not set_session_model
     expect(ACP_PROVIDERS['claude-code'].supportsSetSessionModel).toBe(false);
     expect(ACP_PROVIDERS['claude-code'].sessionMetaKey).toBe('claudeCode');
-    expect(ACP_PROVIDERS['claude-code'].defaultSessionMode).toBe(
-      'bypassPermissions',
-    );
+    expect(ACP_PROVIDERS['claude-code'].defaultSessionMode).toBe('bypassPermissions');
 
     // codex-acp + gemini-cli select via set_session_model
     expect(ACP_PROVIDERS['codex'].supportsSetSessionModel).toBe(true);
@@ -96,12 +88,8 @@ describe('getACPProvider', () => {
 
 describe('detectACPProviderByAgentName', () => {
   it('matches by lowercased substring of the runtime agent_name', () => {
-    expect(detectACPProviderByAgentName('claude-agent-acp')?.key).toBe(
-      'claude-code',
-    );
-    expect(detectACPProviderByAgentName('Claude-Agent-ACP')?.key).toBe(
-      'claude-code',
-    );
+    expect(detectACPProviderByAgentName('claude-agent-acp')?.key).toBe('claude-code');
+    expect(detectACPProviderByAgentName('Claude-Agent-ACP')?.key).toBe('claude-code');
     expect(detectACPProviderByAgentName('codex-acp')?.key).toBe('codex');
     expect(detectACPProviderByAgentName('gemini-cli')?.key).toBe('gemini-cli');
   });
@@ -113,9 +101,7 @@ describe('detectACPProviderByAgentName', () => {
 
 describe('buildSessionModelMeta', () => {
   it('returns a _meta block for providers with a session_meta_key', () => {
-    expect(
-      buildSessionModelMeta('claude-agent-acp', 'claude-opus-4-5'),
-    ).toEqual({
+    expect(buildSessionModelMeta('claude-agent-acp', 'claude-opus-4-5')).toEqual({
       claudeCode: { options: { model: 'claude-opus-4-5' } },
     });
   });
