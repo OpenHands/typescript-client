@@ -791,6 +791,100 @@ describe('Auxiliary API clients', () => {
     );
   });
 
+  it('ConversationClient.getConversations omits include_skills by default', async () => {
+    // Default call must not send the param at all, so older
+    // agent-servers that don't know about it behave exactly as
+    // before this PR. The trim is purely opt-in.
+    global.fetch = jest.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(JSON.stringify([]), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      )
+    ) as typeof fetch;
+
+    const client = new ConversationClient({ host: 'http://example.com' });
+    await client.getConversations(['c1', 'c2']);
+
+    const [url] = (global.fetch as jest.Mock).mock.calls[0];
+    expect(url).toBe('http://example.com/api/conversations?ids=c1&ids=c2');
+    expect(url).not.toContain('include_skills');
+  });
+
+  it('ConversationClient.getConversations sends include_skills=false when opted in', async () => {
+    global.fetch = jest.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(JSON.stringify([]), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      )
+    ) as typeof fetch;
+
+    const client = new ConversationClient({ host: 'http://example.com' });
+    await client.getConversations(['c1'], { includeSkills: false });
+
+    const [url] = (global.fetch as jest.Mock).mock.calls[0];
+    expect(url).toBe('http://example.com/api/conversations?ids=c1&include_skills=false');
+  });
+
+  it('ConversationClient.getConversation sends include_skills on the single-id endpoint', async () => {
+    global.fetch = jest.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ id: 'c1' }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      )
+    ) as typeof fetch;
+
+    const client = new ConversationClient({ host: 'http://example.com' });
+    await client.getConversation('c1', { includeSkills: false });
+
+    const [url] = (global.fetch as jest.Mock).mock.calls[0];
+    expect(url).toBe('http://example.com/api/conversations/c1?include_skills=false');
+  });
+
+  it('ConversationClient.searchConversations merges include_skills with other search params', async () => {
+    global.fetch = jest.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ items: [], next_page_id: null }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      )
+    ) as typeof fetch;
+
+    const client = new ConversationClient({ host: 'http://example.com' });
+    await client.searchConversations({ limit: 5, includeSkills: false });
+
+    const [url] = (global.fetch as jest.Mock).mock.calls[0];
+    expect(url).toContain('limit=5');
+    expect(url).toContain('include_skills=false');
+    // ``includeSkills`` is the camelCase TS shape; we explicitly do
+    // NOT leak it onto the wire as-is (server expects snake_case).
+    expect(url).not.toContain('includeSkills');
+  });
+
+  it('ConversationClient.createConversation forwards include_skills as a query param', async () => {
+    global.fetch = jest.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ id: 'c1' }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      )
+    ) as typeof fetch;
+
+    const client = new ConversationClient({ host: 'http://example.com' });
+    await client.createConversation({ agent: {} }, { includeSkills: false });
+
+    const [url, init] = (global.fetch as jest.Mock).mock.calls[0];
+    expect(url).toBe('http://example.com/api/conversations?include_skills=false');
+    expect(init.method).toBe('POST');
+  });
+
   it('Security ApiKeys Session and Shared clients wrap app endpoints', async () => {
     const responses = [
       { policy: 'default' },
