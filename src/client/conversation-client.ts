@@ -1,5 +1,5 @@
 import { HttpClient } from './http-client';
-import { Success } from '../types/base';
+import { LLM, Success } from '../types/base';
 import type {
   AskAgentResponse,
   ConfirmationResponseRequest,
@@ -138,7 +138,7 @@ export class ConversationClient {
     });
   }
 
-  async switchLLM(conversationId: string, llm: unknown): Promise<void> {
+  async switchLLM(conversationId: string, llm: LLM): Promise<void> {
     await this.client.post<Success>(`/api/conversations/${conversationId}/switch_llm`, { llm });
   }
 
