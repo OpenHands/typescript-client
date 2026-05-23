@@ -20,6 +20,7 @@ import {
   FileClient,
   HooksClient,
   isAgentServerVersionError,
+  LLMMetadataClient,
   MCPClient,
   ProfilesClient,
   SecurityClient,
@@ -129,6 +130,72 @@ describe('Auxiliary API clients', () => {
         body: JSON.stringify({ llm: { model: 'gpt-4o', api_key: 'encrypted' } }),
       })
     );
+  });
+
+  it('LLMMetadataClient calls OpenAI subscription endpoints without exposing tokens', async () => {
+    const responses = [
+      { vendor: 'openai', connected: false, account_email: null, expires_at: null },
+      {
+        device_code: 'opaque-token',
+        user_code: 'ABCD-EFGH',
+        verification_uri: 'https://auth.example/device',
+        verification_uri_complete: null,
+        expires_at: 4102444800000,
+        interval_seconds: 5,
+      },
+      { vendor: 'openai', connected: true, account_email: null, expires_at: 4102444800000 },
+      { vendor: 'openai', connected: false, account_email: null, expires_at: null },
+    ];
+    global.fetch = jest.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(JSON.stringify(responses.shift()), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      )
+    ) as typeof fetch;
+
+    const client = new LLMMetadataClient({ host: 'http://example.com', apiKey: 'secret' });
+
+    await expect(client.getOpenAISubscriptionStatus()).resolves.toMatchObject({
+      vendor: 'openai',
+      connected: false,
+    });
+    await expect(client.startOpenAISubscriptionDeviceLogin()).resolves.toMatchObject({
+      device_code: 'opaque-token',
+      user_code: 'ABCD-EFGH',
+    });
+    await expect(client.pollOpenAISubscriptionDeviceLogin('opaque-token')).resolves.toMatchObject({
+      connected: true,
+      expires_at: 4102444800000,
+    });
+    await expect(client.logoutOpenAISubscription()).resolves.toMatchObject({ connected: false });
+
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      1,
+      'http://example.com/api/llm/subscription/openai/status',
+      expect.objectContaining({ method: 'GET' })
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      2,
+      'http://example.com/api/llm/subscription/openai/device/start',
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      3,
+      'http://example.com/api/llm/subscription/openai/device/poll',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ device_code: 'opaque-token' }),
+      })
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      4,
+      'http://example.com/api/llm/subscription/openai/logout',
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(JSON.stringify((global.fetch as jest.Mock).mock.calls)).not.toContain('access-token');
+    expect(JSON.stringify((global.fetch as jest.Mock).mock.calls)).not.toContain('refresh-token');
   });
 
   it('SkillsClient.syncSkills posts to the sync endpoint', async () => {
