@@ -138,6 +138,10 @@ export class ConversationClient {
     });
   }
 
+  async switchLLM(conversationId: string, llm: unknown): Promise<void> {
+    await this.client.post<Success>(`/api/conversations/${conversationId}/switch_llm`, { llm });
+  }
+
   async deleteConversation(conversationId: string): Promise<void> {
     await this.client.delete<Success>(`/api/conversations/${conversationId}`);
   }

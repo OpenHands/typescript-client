@@ -19,7 +19,7 @@ export { LocalWorkspace } from './workspace/local-workspace';
 export { Workspace, createWorkspace, createWorkspaceAuto } from './workspace/workspace';
 export { RemoteState } from './conversation/remote-state';
 export { RemoteEventsList } from './events/remote-events-list';
-export type { EventSearchOptions } from './events/remote-events-list';
+export type { EventSearchOptions, RemoteEventsListOptions } from './events/remote-events-list';
 
 // Stuck Detection
 export { StuckDetector, DEFAULT_STUCK_THRESHOLDS } from './conversation/stuck-detector';

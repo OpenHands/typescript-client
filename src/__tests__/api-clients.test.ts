@@ -4,6 +4,7 @@ import {
   HttpClient,
   HttpError,
   RemoteConversation,
+  RemoteEventsList,
   RemoteWorkspace,
   Workspace,
 } from '../index';
@@ -77,6 +78,49 @@ describe('Auxiliary API clients', () => {
 
     expect(ready.status).toBe('initializing');
     expect(ready.message).toBe('Booting');
+  });
+
+  it('RemoteEventsList can be constructed from client options', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ items: [], next_page_id: null }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const events = new RemoteEventsList({ baseUrl: 'http://example.com', apiKey: 'secret' }, 'c1');
+    const page = await events.search({ limit: 25 });
+
+    expect(page.items).toEqual([]);
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/conversations/c1/events/search?limit=25',
+      expect.objectContaining({
+        method: 'GET',
+        headers: expect.objectContaining({
+          'X-Session-API-Key': 'secret',
+        }),
+      })
+    );
+  });
+
+  it('ConversationClient.switchLLM posts an explicit LLM config', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const client = new ConversationClient({ host: 'http://example.com' });
+    await client.switchLLM('c1', { model: 'gpt-4o', api_key: 'encrypted' });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/conversations/c1/switch_llm',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ llm: { model: 'gpt-4o', api_key: 'encrypted' } }),
+      })
+    );
   });
 
   it('SkillsClient.syncSkills posts to the sync endpoint', async () => {
