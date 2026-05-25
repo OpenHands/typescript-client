@@ -132,6 +132,24 @@ describe('Auxiliary API clients', () => {
     );
   });
 
+  it('LLMMetadataClient.getOpenAISubscriptionModels returns models array', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ vendor: 'openai', models: ['gpt-5.2', 'gpt-5.3-codex'] }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const client = new LLMMetadataClient({ host: 'http://example.com', apiKey: 'secret' });
+    const models = await client.getOpenAISubscriptionModels();
+
+    expect(models).toEqual(['gpt-5.2', 'gpt-5.3-codex']);
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/llm/subscription/openai/models',
+      expect.objectContaining({ method: 'GET' })
+    );
+  });
+
   it('LLMMetadataClient calls OpenAI subscription endpoints without exposing tokens', async () => {
     const responses = [
       { vendor: 'openai', connected: false, account_email: null, expires_at: null },

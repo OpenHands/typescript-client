@@ -33,16 +33,16 @@ export interface VerifiedModelsResponse {
 export interface LLMSubscriptionStatusResponse {
   vendor: string;
   connected: boolean;
-  account_email?: string | null;
-  expires_at?: number | string | null;
+  account_email: string | null;
+  expires_at: number | null;
 }
 
 export interface LLMSubscriptionDeviceStartResponse {
   device_code: string;
   user_code: string;
   verification_uri: string;
-  verification_uri_complete?: string | null;
-  expires_at: number | string;
+  verification_uri_complete: string | null;
+  expires_at: number;
   interval_seconds: number;
 }
 
