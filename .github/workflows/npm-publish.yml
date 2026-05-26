@@ -28,7 +28,7 @@ jobs:
       - name: Set up Node.js for npm trusted publishing
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '22'
           cache: npm
           registry-url: https://registry.npmjs.org
 
@@ -56,17 +56,19 @@ jobs:
       - name: Run tests
         run: npm test
 
-      - name: Build package
-        run: npm run build
-
-      - name: Verify package contents
-        run: npm pack --dry-run
-
+      # Set version from tag BEFORE build so any source that reads
+      # package.json at compile time picks up the correct version.
       - name: Extract and set version from tag
         run: |
           TAG_VERSION=${GITHUB_REF#refs/tags/v}
           echo "Publishing version: $TAG_VERSION"
           npm version "$TAG_VERSION" --no-git-tag-version
+
+      - name: Build package
+        run: npm run build
+
+      - name: Verify package contents
+        run: npm pack --dry-run
 
       - name: Validate version was set
         run: |
