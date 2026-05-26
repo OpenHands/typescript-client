@@ -8,14 +8,14 @@ The package is published to **two registries** on every version tag:
 
 | Registry | Workflow | Auth |
 |----------|----------|------|
-| **npm** (`registry.npmjs.org`) | `.github/workflows/npm-publish.yml` | OIDC trusted publishing |
+| **npm** (`registry.npmjs.org`) | `.github/workflows/npm-publish.yml` | `NPM_TOKEN` repo secret |
 | **GitHub Packages** (`npm.pkg.github.com`) | `.github/workflows/release.yml` | `GITHUB_TOKEN` |
 
 ## Automated Publishing (Recommended)
 
 ### Prerequisites
 
-- **npm trusted publishing**: The `@openhands/typescript-client` package on npmjs.org must have the `OpenHands/typescript-client` repository configured as a trusted publisher (see [npm docs](https://docs.npmjs.com/trusted-publishers/)).
+- **`NPM_TOKEN` repo secret**: An npm access token with publish permission for the `@openhands` scope, stored as a repository secret named `NPM_TOKEN`.
 - **GitHub Token**: Automatically provided by GitHub Actions as `GITHUB_TOKEN` for GitHub Packages.
 
 ### Publishing Process
