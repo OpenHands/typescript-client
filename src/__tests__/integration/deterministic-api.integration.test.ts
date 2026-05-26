@@ -133,11 +133,17 @@ describe('Deterministic API Integration Tests', () => {
           conversation.switchProfile('__profile_that_should_not_exist__')
         ).rejects.toBeInstanceOf(HttpError);
 
-        // switchLlm swaps the LLM object directly (no profile on disk), so it
-        // resolves where the missing-profile switchProfile above rejects.
-        await expect(
-          conversation.switchLlm({ model: 'dummy/model', api_key: 'dummy-key' })
-        ).resolves.toBeUndefined();
+        // switchLlm swaps the LLM in place, keyed by usage_id (first-write-wins
+        // in the registry). Reusing the agent's existing usage_id would be a
+        // silent no-op, so use a fresh one and read the model back off the
+        // agent to prove the swap actually took effect.
+        await conversation.switchLlm({
+          model: 'dummy/switched-model',
+          api_key: 'dummy-key',
+          usage_id: 'switched',
+        });
+        const switchedAgent = await conversation.state.getAgent();
+        expect(switchedAgent.llm.model).toBe('dummy/switched-model');
 
         const acpConversation = await manager.acp.createConversation(
           {
@@ -236,8 +242,10 @@ describe('Deterministic API Integration Tests', () => {
 
         const detail = await manager.profiles.getProfile(profileName);
         expect(detail.name).toBe(profileName);
-        // The default (no X-Expose-Secrets) response nulls api_key and reports
-        // the presence of the saved key via api_key_set instead.
+        // The saved LLM config round-trips...
+        expect(detail.config.model).toBe('dummy/model');
+        // ...but the default (no X-Expose-Secrets) response nulls api_key and
+        // reports the presence of the saved key via api_key_set instead.
         expect(detail.config.api_key).toBeNull();
         expect(detail.api_key_set).toBe(true);
 
@@ -256,6 +264,12 @@ describe('Deterministic API Integration Tests', () => {
 
         const renamedDetail = await manager.profiles.getProfile(renamedProfile);
         expect(renamedDetail.name).toBe(renamedProfile);
+        // The config survives the (atomic) rename...
+        expect(renamedDetail.config.model).toBe('dummy/model');
+        // ...and because the renamed profile was the active one, the
+        // active_profile pointer follows it to the new name.
+        const afterRename = await manager.profiles.listProfiles();
+        expect(afterRename.active_profile).toBe(renamedProfile);
         // The original name stops resolving once the profile is renamed.
         await expect(manager.profiles.getProfile(profileName)).rejects.toBeInstanceOf(HttpError);
 
