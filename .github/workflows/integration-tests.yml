@@ -16,7 +16,10 @@ env:
   AGENT_SERVER_PORT: 8010
   HOST_WORKSPACE_DIR: /tmp/agent-workspace
   AGENT_WORKSPACE_DIR: /workspace
-  AGENT_SERVER_IMAGE: ghcr.io/openhands/agent-server:b1235d0-python # software-agent-sdk v1.23.0
+  # software-agent-sdk main @ 9d35320 (the #3390 merge — adds the
+  # /switch_acp_model route the switchAcpModel integration test needs).
+  # Interim: bump to the SDK release image that contains #3390 once it is cut.
+  AGENT_SERVER_IMAGE: ghcr.io/openhands/agent-server:9d35320-python
 
 jobs:
   integration-test:
