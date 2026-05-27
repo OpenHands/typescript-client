@@ -18,6 +18,7 @@ env:
   AGENT_WORKSPACE_DIR: /workspace
   # software-agent-sdk main @ 9d35320 (the #3390 merge — adds the
   # /switch_acp_model route the switchAcpModel integration test needs).
+  # Newer than the v1.23.1 release (71b070d), which predates #3390.
   # Interim: bump to the SDK release image that contains #3390 once it is cut.
   AGENT_SERVER_IMAGE: ghcr.io/openhands/agent-server:9d35320-python
 
