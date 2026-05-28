@@ -772,6 +772,31 @@ describe('Auxiliary API clients', () => {
     );
   });
 
+  it('RemoteConversation.switchAcpModel POSTs the model to the switch_acp_model endpoint', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const agent = new Agent({ llm: { model: 'gpt-4o', api_key: 'k' } });
+    const workspace = new RemoteWorkspace({ host: 'http://example.com', workingDir: '/tmp' });
+    const conversation = new RemoteConversation(agent, workspace, {
+      conversationId: 'conv-123',
+    });
+
+    await conversation.switchAcpModel('claude-haiku-4-5');
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/conversations/conv-123/switch_acp_model',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ model: 'claude-haiku-4-5' }),
+      })
+    );
+  });
+
   it('RemoteConversation.setConfirmationPolicy wraps the SDK v1.23.0 request body', async () => {
     global.fetch = jest.fn().mockResolvedValue(
       new Response(JSON.stringify({ success: true }), {
@@ -795,6 +820,64 @@ describe('Auxiliary API clients', () => {
         body: JSON.stringify({ policy: { kind: 'NeverConfirm' } }),
       })
     );
+  });
+
+  it('RemoteConversation.start sends the optional observability user ID', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ id: 'conv-123' }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const agent = new Agent({ llm: { model: 'gpt-4o', api_key: 'k' } });
+    const workspace = new RemoteWorkspace({ host: 'http://example.com', workingDir: '/tmp' });
+    const conversation = new RemoteConversation(agent, workspace, {
+      userId: 'user-42',
+    });
+
+    await conversation.start({ initialMessage: 'hello' });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/conversations',
+      expect.objectContaining({
+        method: 'POST',
+      })
+    );
+    const [, init] = (global.fetch as jest.Mock).mock.calls[0];
+    expect(JSON.parse(init.body)).toMatchObject({
+      user_id: 'user-42',
+      initial_message: {
+        role: 'user',
+        content: [{ type: 'text', text: 'hello' }],
+      },
+    });
+  });
+
+  it('ConversationManager.createACPConversation sends the optional observability user ID', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ id: 'acp-123' }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const manager = new ConversationManager({ host: 'http://example.com' });
+    await manager.createACPConversation(
+      { kind: 'ACPAgent', llm: { model: 'gpt-4o' } },
+      { userId: 'user-42' }
+    );
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/acp/conversations',
+      expect.objectContaining({
+        method: 'POST',
+      })
+    );
+    const [, init] = (global.fetch as jest.Mock).mock.calls[0];
+    expect(JSON.parse(init.body)).toMatchObject({
+      user_id: 'user-42',
+    });
   });
 
   it('HttpClient can parse blob responses when requested', async () => {
@@ -895,6 +978,26 @@ describe('Auxiliary API clients', () => {
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ profile_name: 'fast' }),
+      })
+    );
+  });
+
+  it('ConversationClient.switchAcpModel posts the model', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const client = new ConversationClient({ host: 'http://example.com' });
+    await client.switchAcpModel('conversation-1', 'claude-haiku-4-5');
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/conversations/conversation-1/switch_acp_model',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ model: 'claude-haiku-4-5' }),
       })
     );
   });
