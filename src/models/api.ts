@@ -158,18 +158,22 @@ export type ProfileKind = 'openhands' | 'acp';
 
 export interface ProfileInfo {
   name: string;
-  /** AgentProfile kind; legacy LLM profiles report `openhands`. */
-  kind: ProfileKind;
+  /**
+   * AgentProfile kind; legacy LLM profiles report `openhands`. Optional so the
+   * client stays compatible with agent-servers that predate AgentProfiles and
+   * don't emit this field — treat a missing `kind` as `'openhands'`.
+   */
+  kind?: ProfileKind;
   /**
    * Display model. For `openhands` profiles this is the LLM model; for `acp`
    * profiles it mirrors `acp_model` so chip/label consumers still render.
    */
   model: string | null;
   base_url: string | null;
-  /** ACP backend key for `acp` profiles (else `null`). */
-  acp_server: string | null;
-  /** Configured ACP model for `acp` profiles (else `null`). */
-  acp_model: string | null;
+  /** ACP backend key for `acp` profiles (`null`/absent for `openhands`). */
+  acp_server?: string | null;
+  /** Configured ACP model for `acp` profiles (`null`/absent for `openhands`). */
+  acp_model?: string | null;
   api_key_set: boolean;
 }
 
