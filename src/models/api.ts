@@ -149,10 +149,27 @@ export interface VSCodeStatusResponse {
   message?: string;
 }
 
+/**
+ * AgentProfile kind. `openhands` profiles carry an LLM config; `acp` profiles
+ * launch an ACP subprocess (see `acp_server` / `acp_model`). Legacy LLM-only
+ * profiles default to `openhands`. Mirrors the agent-server's profile model.
+ */
+export type ProfileKind = 'openhands' | 'acp';
+
 export interface ProfileInfo {
   name: string;
+  /** AgentProfile kind; legacy LLM profiles report `openhands`. */
+  kind: ProfileKind;
+  /**
+   * Display model. For `openhands` profiles this is the LLM model; for `acp`
+   * profiles it mirrors `acp_model` so chip/label consumers still render.
+   */
   model: string | null;
   base_url: string | null;
+  /** ACP backend key for `acp` profiles (else `null`). */
+  acp_server: string | null;
+  /** Configured ACP model for `acp` profiles (else `null`). */
+  acp_model: string | null;
   api_key_set: boolean;
 }
 
@@ -179,7 +196,20 @@ export interface ActivateProfileResponse {
 }
 
 export interface SaveProfileRequest {
-  llm: LLM;
+  /**
+   * Legacy LLM-only payload, saved as an `openhands` profile. Provide exactly
+   * one of `llm` or `agent_settings`.
+   */
+  llm?: LLM;
+  /**
+   * Full AgentSettings payload (discriminated by `agent_kind`). Use this to
+   * save ACP profiles, e.g.
+   * `{ agent_kind: 'acp', acp_server, acp_model, acp_command, acp_args, acp_env }`.
+   * Mutually exclusive with `llm`. Typed as a record because the agent-server
+   * validates it against the discriminated `AgentSettings` union.
+   */
+  agent_settings?: Record<string, unknown>;
+  /** Whether to persist secrets (API key / acp_env) with the profile. */
   include_secrets?: boolean;
 }
 

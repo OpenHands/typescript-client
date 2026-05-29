@@ -4,6 +4,7 @@ import {
   ConversationManager,
   HttpClient,
   HttpError,
+  ProfileInfo,
   RemoteConversation,
   RemoteEventsList,
   RemoteWorkspace,
@@ -521,6 +522,70 @@ describe('Auxiliary API clients', () => {
         }),
       })
     );
+  });
+
+  it('ProfilesClient.saveProfile POSTs an ACP profile via agent_settings', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({ name: 'local-codex', message: "Profile 'local-codex' saved" }),
+        { status: 201, headers: { 'content-type': 'application/json' } }
+      )
+    ) as typeof fetch;
+
+    const client = new ProfilesClient({ host: 'http://example.com' });
+    const result = await client.saveProfile('local-codex', {
+      agent_settings: {
+        agent_kind: 'acp',
+        acp_server: 'codex',
+        acp_model: 'gpt-5-codex',
+        acp_command: ['npx', '-y', '@zed-industries/codex-acp'],
+        acp_args: [],
+        acp_env: {},
+      },
+    });
+
+    expect(result.name).toBe('local-codex');
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/profiles/local-codex',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          agent_settings: {
+            agent_kind: 'acp',
+            acp_server: 'codex',
+            acp_model: 'gpt-5-codex',
+            acp_command: ['npx', '-y', '@zed-industries/codex-acp'],
+            acp_args: [],
+            acp_env: {},
+          },
+        }),
+      })
+    );
+  });
+
+  it('ProfilesClient.listProfiles surfaces the AgentProfile kind / acp fields', async () => {
+    const acpProfile: ProfileInfo = {
+      name: 'local-codex',
+      kind: 'acp',
+      model: 'gpt-5-codex',
+      base_url: null,
+      acp_server: 'codex',
+      acp_model: 'gpt-5-codex',
+      api_key_set: true,
+    };
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({ profiles: [acpProfile], active_profile: 'local-codex' }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      )
+    ) as typeof fetch;
+
+    const client = new ProfilesClient({ host: 'http://example.com' });
+    const result = await client.listProfiles();
+
+    expect(result.profiles[0].kind).toBe('acp');
+    expect(result.profiles[0].acp_server).toBe('codex');
+    expect(result.profiles[0].acp_model).toBe('gpt-5-codex');
   });
 
   it('ProfilesClient.deleteProfile DELETEs the profile endpoint', async () => {
