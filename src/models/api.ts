@@ -149,6 +149,39 @@ export interface VSCodeStatusResponse {
   message?: string;
 }
 
+/**
+ * Outcome of an ACP auth-status probe (`GET /api/acp/auth-status`).
+ *
+ * - `authenticated`   — `session/new` succeeded ⇒ the provider CLI is logged in
+ *   (by a subscription *or* a pre-set API key).
+ * - `unauthenticated` — the server is reachable but reports `auth_required`.
+ * - `unknown`         — the probe could not run/complete (subprocess won't
+ *   start, timeout, or a non-auth error); the caller should fall back to the
+ *   API-key fields rather than treat this as "not logged in".
+ */
+export type ACPAuthStatusValue = 'authenticated' | 'unauthenticated' | 'unknown';
+
+/**
+ * Response from `GET /api/acp/auth-status?server=<key>`. Mirrors the
+ * `ACPAuthStatusResponse` model in the agent server's `acp_auth_router`.
+ */
+export interface ACPAuthStatusResponse {
+  /** The ACP provider key that was probed (e.g. `"claude-code"`). */
+  server: string;
+  status: ACPAuthStatusValue;
+  /**
+   * Auth method ids advertised at `initialize`. Informational only — the menu
+   * of how to log in, not a logged-in signal.
+   */
+  auth_methods: string[];
+  /** ACP server name reported by the handshake (empty if unavailable). */
+  agent_name: string;
+  /** ACP server version reported by the handshake (empty if unavailable). */
+  agent_version: string;
+  /** Populated only when `status` is `"unknown"`: why the probe failed. */
+  detail: string | null;
+}
+
 export interface ProfileInfo {
   name: string;
   model: string | null;

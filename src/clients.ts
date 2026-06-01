@@ -1,4 +1,5 @@
 export { ServerClient } from './client/server-client';
+export { AcpClient } from './client/acp-client';
 export { BashClient } from './client/bash-client';
 export { CloudProxyClient } from './client/cloud-proxy-client';
 export { ConversationClient } from './client/conversation-client';
@@ -29,6 +30,7 @@ export {
 } from './client/agent-server-compatibility';
 
 export type { ServerClientOptions } from './client/server-client';
+export type { AcpClientOptions } from './client/acp-client';
 export type { BashClientOptions } from './client/bash-client';
 export type { CloudProxyClientOptions } from './client/cloud-proxy-client';
 export type {

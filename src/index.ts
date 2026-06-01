@@ -291,6 +291,8 @@ export type {
   DesktopUrlResponse,
   VSCodeUrlResponse,
   VSCodeStatusResponse,
+  ACPAuthStatusValue,
+  ACPAuthStatusResponse,
   ProfileInfo,
   ProfileListResponse,
   ProfileDetailResponse,

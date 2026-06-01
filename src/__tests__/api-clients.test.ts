@@ -10,6 +10,7 @@ import {
   Workspace,
 } from '../index';
 import {
+  AcpClient,
   AgentServerVersionError,
   ApiKeysClient,
   BashClient,
@@ -1347,5 +1348,68 @@ describe('Auxiliary API clients', () => {
       'http://example.com/api/shared-events/search?conversation_id=shared-1&limit=50',
       expect.objectContaining({ method: 'GET' })
     );
+  });
+
+  it('AcpClient.getAuthStatus probes a provider via a query param', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          server: 'claude-code',
+          status: 'authenticated',
+          auth_methods: [],
+          agent_name: 'claude-code-acp',
+          agent_version: '1.2.3',
+          detail: null,
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      )
+    ) as typeof fetch;
+
+    const client = new AcpClient({ host: 'http://example.com', apiKey: 'secret' });
+    const result = await client.getAuthStatus('claude-code');
+
+    expect(result.status).toBe('authenticated');
+    expect(result.agent_name).toBe('claude-code-acp');
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/acp/auth-status?server=claude-code',
+      expect.objectContaining({
+        method: 'GET',
+        headers: expect.objectContaining({ 'X-Session-API-Key': 'secret' }),
+      })
+    );
+  });
+
+  it('AcpClient.getAuthStatus returns an unknown status without throwing', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          server: 'codex',
+          status: 'unknown',
+          auth_methods: [],
+          agent_name: '',
+          agent_version: '',
+          detail: 'FileNotFoundError: npx',
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      )
+    ) as typeof fetch;
+
+    const client = new AcpClient({ host: 'http://example.com' });
+    const result = await client.getAuthStatus('codex');
+
+    expect(result.status).toBe('unknown');
+    expect(result.detail).toBe('FileNotFoundError: npx');
+  });
+
+  it('AcpClient.getAuthStatus surfaces a 422 for an unknown provider', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ detail: "Unknown ACP server 'nope'." }), {
+        status: 422,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const client = new AcpClient({ host: 'http://example.com' });
+    await expect(client.getAuthStatus('nope')).rejects.toMatchObject({ status: 422 });
   });
 });
