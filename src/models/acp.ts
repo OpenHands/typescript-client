@@ -90,9 +90,16 @@ export function getAcpProvider(key: string | null | undefined): ACPProviderInfo 
 }
 
 /**
- * Allow-list of fields that travel on an `ACPAgent` settings payload.
- * Mirrors `openhands.sdk.settings.model.ACPAgentSettings`'s field set.
- * Clients filter ACP-only fields out when switching to a non-ACP variant.
+ * Allow-list of the `acp_*`-prefixed fields that travel on an `ACPAgent`
+ * settings payload. Mirrors `openhands.sdk.settings.model.ACPAgentSettings`'s
+ * ACP-exclusive field set. Clients filter these out when switching to a
+ * non-ACP variant.
+ *
+ * Deliberately excludes `mcp_config`: it is also a valid `ACPAgent` field (its
+ * MCP servers are forwarded to the ACP subprocess at session creation), but it
+ * is **shared** with the OpenHands agent variant — so it must NOT be stripped
+ * when switching agent kinds. Treat `mcp_config` like `llm`/`agent_context`
+ * (shared, handled explicitly per variant), not as an ACP-only field.
  */
 export const ACP_SETTINGS_KEYS: readonly string[] = [
   'acp_command',
