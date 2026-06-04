@@ -250,6 +250,18 @@ export type {
   ConversationEventPage,
 } from './models/conversation';
 
+export type {
+  paths as AgentServerPaths,
+  components as AgentServerComponents,
+  operations as AgentServerOperations,
+  AgentBaseInput,
+  ConversationInfo as AgentServerConversationInfo,
+  LocalWorkspaceInput,
+  StartAcpConversationRequest,
+  StartAcpConversationRequest as StartACPConversationRequest,
+  StartConversationRequest,
+} from './generated/agent-server-api';
+
 // Client options
 export type { HttpClientOptions, RequestOptions, HttpResponse } from './client/http-client';
 export type { CloudProxyClientOptions } from './client/cloud-proxy-client';
@@ -301,6 +313,7 @@ export type {
   ExposeSecretsMode,
   SettingsValue,
   SettingsApiResponse,
+  SettingsResponse,
   SettingsUpdateRequest,
   SecretInfo,
   SecretsListResponse,

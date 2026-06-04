@@ -3,6 +3,11 @@
  */
 
 import type { HookConfig } from '../hooks';
+import type {
+  SettingsResponse as GeneratedSettingsResponse,
+  SettingsSchema as GeneratedSettingsSchema,
+  SettingsUpdateRequest as GeneratedSettingsUpdateRequest,
+} from '../generated/agent-server-api';
 import type { LLM } from '../types/base';
 
 export interface AliveStatus {
@@ -30,10 +35,7 @@ export interface VerifiedModelsResponse {
   models: Record<string, string[]>;
 }
 
-export interface SettingsSchema {
-  model_name: string;
-  sections: Array<Record<string, unknown>>;
-}
+export type SettingsSchema = GeneratedSettingsSchema;
 
 export interface ExposedUrl {
   name: string;
@@ -191,18 +193,11 @@ export type ExposeSecretsMode = 'encrypted' | 'plaintext';
 
 export type SettingsValue = unknown;
 
-export interface SettingsApiResponse {
-  agent_settings: Record<string, SettingsValue>;
-  conversation_settings: Record<string, SettingsValue>;
-  llm_api_key_is_set: boolean;
-  [key: string]: unknown;
-}
+export type SettingsApiResponse = GeneratedSettingsResponse;
 
-export interface SettingsUpdateRequest {
-  agent_settings_diff?: Record<string, SettingsValue>;
-  conversation_settings_diff?: Record<string, SettingsValue>;
-  [key: string]: unknown;
-}
+export type SettingsResponse = SettingsApiResponse;
+
+export type SettingsUpdateRequest = GeneratedSettingsUpdateRequest;
 
 export interface SecretInfo {
   name: string;

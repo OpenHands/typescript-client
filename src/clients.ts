@@ -28,6 +28,21 @@ export {
   isAgentServerVersionError,
 } from './client/agent-server-compatibility';
 
+export type {
+  paths as AgentServerPaths,
+  components as AgentServerComponents,
+  operations as AgentServerOperations,
+  AgentBaseInput,
+  ConversationInfo as AgentServerConversationInfo,
+  ConversationPage,
+  LocalWorkspaceInput,
+  SettingsResponse,
+  SettingsUpdateRequest,
+  StartAcpConversationRequest,
+  StartAcpConversationRequest as StartACPConversationRequest,
+  StartConversationRequest,
+} from './generated/agent-server-api';
+
 export type { ServerClientOptions } from './client/server-client';
 export type { BashClientOptions } from './client/bash-client';
 export type { CloudProxyClientOptions } from './client/cloud-proxy-client';
