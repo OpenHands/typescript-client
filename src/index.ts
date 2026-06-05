@@ -220,6 +220,7 @@ export { ACP_PROVIDERS, ACP_SETTINGS_KEYS, getAcpProvider } from './models/acp';
 export type { ACPModelOption, ACPProviderInfo, ACPProviderKey } from './models/acp';
 
 // Conversation models
+export { liftAgentContextSecrets } from './models/conversation';
 export type {
   ConversationInfo,
   ACPAgentConfig,

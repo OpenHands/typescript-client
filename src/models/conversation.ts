@@ -9,6 +9,7 @@ import {
   ConfirmationPolicyBase,
   ConversationStats,
   AgentBase,
+  AgentContext,
   Event,
   EventPage,
   Message,
@@ -90,6 +91,8 @@ export interface CreateConversationRequest {
   workspace: Record<string, unknown>;
   hook_config?: HookConfig | null;
   user_id?: string | null;
+  /** Secrets seeded into the conversation's secret_registry at init. */
+  secrets?: Record<string, SecretObject>;
 }
 
 export interface CreateACPConversationRequest {
@@ -100,6 +103,8 @@ export interface CreateACPConversationRequest {
   workspace: Record<string, unknown>;
   hook_config?: HookConfig | null;
   user_id?: string | null;
+  /** Secrets seeded into the conversation's secret_registry at init. */
+  secrets?: Record<string, SecretObject>;
 }
 
 export interface GenerateTitleRequest {
@@ -208,3 +213,27 @@ export interface AgentResponseResult {
 
 export type ConversationEvent = Event;
 export type ConversationEventPage = EventPage;
+
+/**
+ * Lift secrets from an agent's context into the top-level `request.secrets` field.
+ *
+ * Mirrors Python SDK's `_start_request_kwargs()` behavior: if the agent carries
+ * `agent_context.secrets`, they are promoted so the agent-server seeds
+ * `secret_registry` from them at conversation init rather than relying on the
+ * `_start_acp_server()` drain.
+ *
+ * Merge order: `agentContextSecrets` first, then `panelSecrets` override —
+ * mirrors SDK: `{**provider_secrets, **existing}` where panel/existing wins.
+ *
+ * @param agent - The agent whose `agent_context.secrets` to lift.
+ * @param panelSecrets - User-configured secrets that take priority over agent creds.
+ * @returns Merged secrets dict suitable for `StartConversationRequest.secrets`.
+ */
+export function liftAgentContextSecrets(
+  agent: AgentBase,
+  panelSecrets?: Record<string, SecretObject>
+): Record<string, SecretObject> {
+  const ctx = agent.agent_context as AgentContext | null | undefined;
+  const contextSecrets = (ctx?.secrets as Record<string, SecretObject> | undefined) ?? {};
+  return { ...contextSecrets, ...(panelSecrets ?? {}) };
+}
