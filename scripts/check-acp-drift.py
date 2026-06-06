@@ -22,9 +22,16 @@ import sys
 
 
 def _normalize(value):
-    """Coerce tuples to lists and dataclasses to dicts; recurse."""
+    """Coerce tuples to lists and dataclasses/Pydantic models to dicts; recurse."""
     if dataclasses.is_dataclass(value) and not isinstance(value, type):
         return _normalize(dataclasses.asdict(value))
+    # Pydantic v2 BaseModel (used by e.g. ACPFileSecretSpec in openhands-sdk).
+    # Detect duck-typed via model_dump to avoid a hard pydantic import.
+    if hasattr(value, "model_dump") and callable(value.model_dump):
+        try:
+            return _normalize(value.model_dump(mode="json"))
+        except TypeError:
+            return _normalize(value.model_dump())
     if isinstance(value, dict):
         return {k: _normalize(v) for k, v in value.items()}
     if isinstance(value, (list, tuple)):

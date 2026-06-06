@@ -34,6 +34,32 @@ export interface ACPModelOption {
 }
 
 /**
+ * Declarative mapping from a reserved "file-content" secret to a credential
+ * file the ACP subprocess authenticates from. Mirrors
+ * `openhands.sdk.settings.acp_providers.ACPFileSecretSpec` field-for-field.
+ */
+export interface ACPFileSecretSpec {
+  /** Name of the reserved secret holding the credential blob. */
+  readonly secret_name: string;
+  /**
+   * Env var that points the ACP subprocess at the materialised credential
+   * (either the file or its containing directory; see {@link env_points_to}).
+   */
+  readonly env_var: string;
+  /** Whether {@link env_var} points to the file itself or its parent dir. */
+  readonly env_points_to: 'file' | 'dir';
+  /** Filename written under the per-conversation root (or under {@link subdir}). */
+  readonly filename: string;
+  /** Optional subdirectory under the per-conversation root for {@link filename}. */
+  readonly subdir: string | null;
+  /**
+   * Optional warnings emitted when listed env vars are unset at materialisation
+   * time. Useful for surfacing "you also need to set X" hints.
+   */
+  readonly warn_if_unset: readonly string[];
+}
+
+/**
  * Immutable metadata record for one built-in ACP provider. Mirrors
  * `openhands.sdk.settings.acp_providers.ACPProviderInfo` field-for-field.
  */
@@ -72,6 +98,18 @@ export interface ACPProviderInfo {
    * or `null` to let the ACP server pick its own default.
    */
   readonly default_model: string | null;
+  /** Underlying CLI binary name (e.g. `"claude-agent-acp"`). */
+  readonly binary_name: string;
+  /**
+   * Env var that points the provider at its config/data directory
+   * (e.g. `CODEX_HOME`, `CLAUDE_CONFIG_DIR`).
+   */
+  readonly data_dir_env_var: string;
+  /**
+   * Reserved file-content secrets the SDK materialises to disk before
+   * launching this provider's subprocess. See {@link ACPFileSecretSpec}.
+   */
+  readonly file_secrets: readonly ACPFileSecretSpec[];
 }
 
 export const ACP_PROVIDERS: Readonly<Record<ACPProviderKey, ACPProviderInfo>> =
