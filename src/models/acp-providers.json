@@ -11,6 +11,14 @@
     "session_meta_key": "claudeCode",
     "available_models": [
       {
+        "id": "claude-fable-5",
+        "label": "Claude Fable 5"
+      },
+      {
+        "id": "claude-opus-4-8",
+        "label": "Claude Opus 4.8"
+      },
+      {
         "id": "claude-opus-4-7",
         "label": "Claude Opus 4.7"
       },
