@@ -59,7 +59,7 @@
         "label": "Opus (plan) + Sonnet (execute)"
       }
     ],
-    "default_model": "claude-opus-4-7",
+    "default_model": "claude-opus-4-8",
     "supports_runtime_model_switch": true,
     "file_secrets": [],
     "binary_name": "claude-agent-acp",
