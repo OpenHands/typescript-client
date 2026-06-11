@@ -19,36 +19,12 @@
         "label": "Claude Opus 4.8"
       },
       {
-        "id": "claude-opus-4-7",
-        "label": "Claude Opus 4.7"
-      },
-      {
-        "id": "claude-opus-4-6",
-        "label": "Claude Opus 4.6"
-      },
-      {
         "id": "opus[1m]",
         "label": "Claude Opus (1M)"
       },
       {
-        "id": "claude-opus-4-5",
-        "label": "Claude Opus 4.5"
-      },
-      {
-        "id": "claude-opus-4-1-20250805",
-        "label": "Claude Opus 4.1"
-      },
-      {
         "id": "claude-sonnet-4-6",
         "label": "Claude Sonnet 4.6"
-      },
-      {
-        "id": "sonnet[1m]",
-        "label": "Claude Sonnet (1M)"
-      },
-      {
-        "id": "claude-sonnet-4-5",
-        "label": "Claude Sonnet 4.5"
       },
       {
         "id": "claude-haiku-4-5",
@@ -91,22 +67,6 @@
       {
         "id": "gpt-5.5/xhigh",
         "label": "GPT-5.5 (xhigh)"
-      },
-      {
-        "id": "gpt-5.4/low",
-        "label": "GPT-5.4 (low)"
-      },
-      {
-        "id": "gpt-5.4/medium",
-        "label": "GPT-5.4 (medium)"
-      },
-      {
-        "id": "gpt-5.4/high",
-        "label": "GPT-5.4 (high)"
-      },
-      {
-        "id": "gpt-5.4/xhigh",
-        "label": "GPT-5.4 (xhigh)"
       },
       {
         "id": "gpt-5.4-mini/low",
