@@ -36,7 +36,7 @@
   "codex": {
     "key": "codex",
     "display_name": "Codex",
-    "default_command": ["npx", "-y", "@zed-industries/codex-acp@0.16.0"],
+    "default_command": ["npx", "-y", "@zed-industries/codex-acp@0.15.0"],
     "api_key_env_var": "OPENAI_API_KEY",
     "base_url_env_var": "OPENAI_BASE_URL",
     "default_session_mode": "full-access",
