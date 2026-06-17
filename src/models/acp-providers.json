@@ -2,40 +2,32 @@
   "claude-code": {
     "key": "claude-code",
     "display_name": "Claude Code",
-    "default_command": ["npx", "-y", "@agentclientprotocol/claude-agent-acp@0.30.0"],
+    "default_command": ["npx", "-y", "@agentclientprotocol/claude-agent-acp@0.46.0"],
     "api_key_env_var": "ANTHROPIC_API_KEY",
     "base_url_env_var": "ANTHROPIC_BASE_URL",
     "default_session_mode": "bypassPermissions",
     "agent_name_patterns": ["claude-agent"],
-    "supports_set_session_model": false,
+    "supports_set_session_model": true,
     "session_meta_key": "claudeCode",
     "available_models": [
       {
-        "id": "claude-fable-5",
-        "label": "Claude Fable 5"
-      },
-      {
-        "id": "claude-opus-4-8",
-        "label": "Claude Opus 4.8"
+        "id": "default",
+        "label": "Default (recommended)"
       },
       {
         "id": "opus[1m]",
-        "label": "Claude Opus (1M)"
+        "label": "Claude Opus 4.8 (1M)"
       },
       {
-        "id": "claude-sonnet-4-6",
+        "id": "sonnet",
         "label": "Claude Sonnet 4.6"
       },
       {
-        "id": "claude-haiku-4-5",
+        "id": "haiku",
         "label": "Claude Haiku 4.5"
-      },
-      {
-        "id": "opusplan",
-        "label": "Opus (plan) + Sonnet (execute)"
       }
     ],
-    "default_model": "claude-opus-4-8",
+    "default_model": "opus[1m]",
     "supports_runtime_model_switch": true,
     "file_secrets": [],
     "binary_name": "claude-agent-acp",
@@ -44,7 +36,7 @@
   "codex": {
     "key": "codex",
     "display_name": "Codex",
-    "default_command": ["npx", "-y", "@zed-industries/codex-acp@0.15.0"],
+    "default_command": ["npx", "-y", "@zed-industries/codex-acp@0.16.0"],
     "api_key_env_var": "OPENAI_API_KEY",
     "base_url_env_var": "OPENAI_BASE_URL",
     "default_session_mode": "full-access",
@@ -103,33 +95,29 @@
   "gemini-cli": {
     "key": "gemini-cli",
     "display_name": "Gemini CLI",
-    "default_command": ["npx", "-y", "@google/gemini-cli@0.38.0", "--acp"],
+    "default_command": ["npx", "-y", "@google/gemini-cli@0.46.0", "--acp"],
     "api_key_env_var": "GEMINI_API_KEY",
     "base_url_env_var": "GEMINI_BASE_URL",
-    "default_session_mode": "yolo",
+    "default_session_mode": "default",
     "agent_name_patterns": ["gemini-cli"],
     "supports_set_session_model": true,
     "session_meta_key": null,
     "available_models": [
       {
-        "id": "auto-gemini-3",
-        "label": "Auto (Gemini 3)"
+        "id": "auto",
+        "label": "Auto"
       },
       {
-        "id": "auto-gemini-2.5",
-        "label": "Auto (Gemini 2.5)"
-      },
-      {
-        "id": "gemini-3.1-pro-preview",
-        "label": "Gemini 3.1 Pro (preview)"
+        "id": "gemini-3-pro-preview",
+        "label": "Gemini 3 Pro (preview)"
       },
       {
         "id": "gemini-3-flash-preview",
         "label": "Gemini 3 Flash (preview)"
       },
       {
-        "id": "gemini-3.1-flash-lite-preview",
-        "label": "Gemini 3.1 Flash Lite (preview)"
+        "id": "gemini-3.1-flash-lite",
+        "label": "Gemini 3.1 Flash Lite"
       },
       {
         "id": "gemini-2.5-pro",
@@ -138,13 +126,9 @@
       {
         "id": "gemini-2.5-flash",
         "label": "Gemini 2.5 Flash"
-      },
-      {
-        "id": "gemini-2.5-flash-lite",
-        "label": "Gemini 2.5 Flash Lite"
       }
     ],
-    "default_model": "auto-gemini-2.5",
+    "default_model": "auto",
     "supports_runtime_model_switch": true,
     "file_secrets": [
       {
