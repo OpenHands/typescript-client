@@ -45,39 +45,19 @@
     "session_meta_key": null,
     "available_models": [
       {
-        "id": "gpt-5.5/low",
-        "label": "GPT-5.5 (low)"
+        "id": "gpt-5.5",
+        "label": "GPT-5.5"
       },
       {
-        "id": "gpt-5.5/medium",
-        "label": "GPT-5.5 (medium)"
+        "id": "gpt-5.4",
+        "label": "GPT-5.4"
       },
       {
-        "id": "gpt-5.5/high",
-        "label": "GPT-5.5 (high)"
-      },
-      {
-        "id": "gpt-5.5/xhigh",
-        "label": "GPT-5.5 (xhigh)"
-      },
-      {
-        "id": "gpt-5.4-mini/low",
-        "label": "GPT-5.4 Mini (low)"
-      },
-      {
-        "id": "gpt-5.4-mini/medium",
-        "label": "GPT-5.4 Mini (medium)"
-      },
-      {
-        "id": "gpt-5.4-mini/high",
-        "label": "GPT-5.4 Mini (high)"
-      },
-      {
-        "id": "gpt-5.4-mini/xhigh",
-        "label": "GPT-5.4 Mini (xhigh)"
+        "id": "gpt-5.4-mini",
+        "label": "GPT-5.4 Mini"
       }
     ],
-    "default_model": "gpt-5.5/medium",
+    "default_model": "gpt-5.5",
     "supports_runtime_model_switch": true,
     "file_secrets": [
       {
