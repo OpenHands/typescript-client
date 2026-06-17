@@ -2,7 +2,7 @@
   "claude-code": {
     "key": "claude-code",
     "display_name": "Claude Code",
-    "default_command": ["npx", "-y", "@agentclientprotocol/claude-agent-acp@0.46.0"],
+    "default_command": ["npx", "-y", "@agentclientprotocol/claude-agent-acp@0.44.0"],
     "api_key_env_var": "ANTHROPIC_API_KEY",
     "base_url_env_var": "ANTHROPIC_BASE_URL",
     "default_session_mode": "bypassPermissions",
