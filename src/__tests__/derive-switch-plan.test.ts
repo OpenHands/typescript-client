@@ -97,7 +97,11 @@ describe('deriveSwitchPlan', () => {
 
   describe('OpenHands → OpenHands', () => {
     it('switch-live when only llm_profile_ref differs', () => {
-      const target: OpenHandsAgentProfile = { ...ohBase, revision: 1, llm_profile_ref: 'claude-sonnet-4-6' };
+      const target: OpenHandsAgentProfile = {
+        ...ohBase,
+        revision: 1,
+        llm_profile_ref: 'claude-sonnet-4-6',
+      };
       const plan = deriveSwitchPlan(ohBase, target, null);
       expect(plan.action).toBe('switch-live');
       if (plan.action === 'switch-live') {
@@ -143,7 +147,11 @@ describe('deriveSwitchPlan', () => {
     });
 
     it('start-new when only acp_model differs but provider does NOT support runtime switch', () => {
-      const codexSnapshot: ACPAgentProfile = { ...acpBase, acp_server: 'codex', acp_model: 'gpt-5' };
+      const codexSnapshot: ACPAgentProfile = {
+        ...acpBase,
+        acp_server: 'codex',
+        acp_model: 'gpt-5',
+      };
       const target: ACPAgentProfile = { ...codexSnapshot, revision: 1, acp_model: 'o4' };
       const plan = deriveSwitchPlan(codexSnapshot, target, codexProvider);
       // codex supports_runtime_model_switch check

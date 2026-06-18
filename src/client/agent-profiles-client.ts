@@ -107,10 +107,7 @@ export class AgentProfilesClient {
     return response.data;
   }
 
-  async renameAgentProfile(
-    name: string,
-    newName: string
-  ): Promise<AgentProfileMutationResponse> {
+  async renameAgentProfile(name: string, newName: string): Promise<AgentProfileMutationResponse> {
     const response = await this.client.post<AgentProfileMutationResponse>(
       `/api/agent-profiles/${encodeURIComponent(name)}/rename`,
       { new_name: newName }

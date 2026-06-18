@@ -81,7 +81,11 @@ export function deriveSwitchPlan(
 
   if (snapshot.agent_kind === 'openhands') {
     // OpenHands → OpenHands: live only if just llm_profile_ref differs.
-    const nonMutable = changedNonMutableFields(snapshotRaw, targetRaw, new Set(['llm_profile_ref']));
+    const nonMutable = changedNonMutableFields(
+      snapshotRaw,
+      targetRaw,
+      new Set(['llm_profile_ref'])
+    );
     if (nonMutable.length === 0) {
       const llmDiffers =
         snapshot.llm_profile_ref !== (targetProfile as OpenHandsAgentProfile).llm_profile_ref;
@@ -123,5 +127,8 @@ export function deriveSwitchPlan(
 
   // Unreachable with a valid AgentProfile union, but guards against future variants.
   const exhaustiveCheck: never = snapshot;
-  return { action: 'disabled', reason: `unknown agent_kind: ${(exhaustiveCheck as { agent_kind: string }).agent_kind}` };
+  return {
+    action: 'disabled',
+    reason: `unknown agent_kind: ${(exhaustiveCheck as { agent_kind: string }).agent_kind}`,
+  };
 }

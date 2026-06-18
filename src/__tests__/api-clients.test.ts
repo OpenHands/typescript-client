@@ -73,8 +73,14 @@ describe('Auxiliary API clients', () => {
     it('listAgentProfiles fetches /api/agent-profiles', async () => {
       const payload = {
         profiles: [
-          { id: 'uuid-1', name: 'default', agent_kind: 'openhands', revision: 0,
-            llm_profile_ref: 'gpt-4o', mcp_server_refs: null },
+          {
+            id: 'uuid-1',
+            name: 'default',
+            agent_kind: 'openhands',
+            revision: 0,
+            llm_profile_ref: 'gpt-4o',
+            mcp_server_refs: null,
+          },
         ],
         active_agent_profile_id: 'uuid-1',
       };
@@ -117,10 +123,13 @@ describe('Auxiliary API clients', () => {
 
     it('saveAgentProfile posts to /api/agent-profiles/{name}', async () => {
       global.fetch = jest.fn().mockResolvedValue(
-        new Response(JSON.stringify({ name: 'myprofile', message: "Agent profile 'myprofile' saved" }), {
-          status: 201,
-          headers: { 'content-type': 'application/json' },
-        })
+        new Response(
+          JSON.stringify({ name: 'myprofile', message: "Agent profile 'myprofile' saved" }),
+          {
+            status: 201,
+            headers: { 'content-type': 'application/json' },
+          }
+        )
       ) as typeof fetch;
 
       const client = new AgentProfilesClient({ host: 'http://example.com' });
@@ -138,10 +147,13 @@ describe('Auxiliary API clients', () => {
 
     it('deleteAgentProfile sends DELETE to /api/agent-profiles/{name}', async () => {
       global.fetch = jest.fn().mockResolvedValue(
-        new Response(JSON.stringify({ name: 'myprofile', message: "Agent profile 'myprofile' deleted" }), {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        })
+        new Response(
+          JSON.stringify({ name: 'myprofile', message: "Agent profile 'myprofile' deleted" }),
+          {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          }
+        )
       ) as typeof fetch;
 
       const client = new AgentProfilesClient({ host: 'http://example.com' });
@@ -156,7 +168,7 @@ describe('Auxiliary API clients', () => {
 
     it('renameAgentProfile posts new_name', async () => {
       global.fetch = jest.fn().mockResolvedValue(
-        new Response(JSON.stringify({ name: 'newname', message: "renamed" }), {
+        new Response(JSON.stringify({ name: 'newname', message: 'renamed' }), {
           status: 200,
           headers: { 'content-type': 'application/json' },
         })
@@ -171,12 +183,14 @@ describe('Auxiliary API clients', () => {
 
     it('activateAgentProfile posts to /{profileId}/activate', async () => {
       const profileId = 'uuid-abc-123';
-      global.fetch = jest.fn().mockResolvedValue(
-        new Response(
-          JSON.stringify({ id: profileId, message: 'activated', agent_settings_applied: false }),
-          { status: 200, headers: { 'content-type': 'application/json' } }
-        )
-      ) as typeof fetch;
+      global.fetch = jest
+        .fn()
+        .mockResolvedValue(
+          new Response(
+            JSON.stringify({ id: profileId, message: 'activated', agent_settings_applied: false }),
+            { status: 200, headers: { 'content-type': 'application/json' } }
+          )
+        ) as typeof fetch;
 
       const client = new AgentProfilesClient({ host: 'http://example.com' });
       const result = await client.activateAgentProfile(profileId);
