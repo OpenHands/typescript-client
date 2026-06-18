@@ -88,6 +88,10 @@
         "label": "Auto"
       },
       {
+        "id": "gemini-3.1-pro-preview",
+        "label": "Gemini 3.1 Pro (preview)"
+      },
+      {
         "id": "gemini-3-pro-preview",
         "label": "Gemini 3 Pro (preview)"
       },
