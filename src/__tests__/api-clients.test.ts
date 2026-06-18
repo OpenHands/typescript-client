@@ -136,13 +136,15 @@ describe('Auxiliary API clients', () => {
       const result = await client.saveAgentProfile('myprofile', {
         agent_kind: 'openhands',
         llm_profile_ref: 'gpt-4o',
-      } as Record<string, unknown>);
+      });
 
       expect(result.name).toBe('myprofile');
       expect(global.fetch).toHaveBeenCalledWith(
         'http://example.com/api/agent-profiles/myprofile',
         expect.objectContaining({ method: 'POST' })
       );
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body as string);
+      expect(body).toEqual({ agent_kind: 'openhands', llm_profile_ref: 'gpt-4o' });
     });
 
     it('deleteAgentProfile sends DELETE to /api/agent-profiles/{name}', async () => {

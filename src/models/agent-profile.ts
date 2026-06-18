@@ -7,7 +7,15 @@
  * credentials, mirroring the Python design. See epic #3713.
  */
 
+import type { ACPProviderKey } from './acp';
+
 // ── Shared supporting types ──────────────────────────────────────────────────
+
+/** Discriminator across the {@link AgentProfile} union. */
+export type AgentKind = 'openhands' | 'acp';
+
+/** ACP backend selector: a built-in provider key or the `'custom'` sentinel. */
+export type ACPServerKind = ACPProviderKey | 'custom';
 
 /** Secret-free critic/refinement policy stored inside an OpenHands profile. */
 export interface ProfileVerificationSettings {
@@ -54,8 +62,8 @@ export interface OpenHandsAgentProfile extends AgentProfileBase {
 /** `agent_kind="acp"` variant — names an ACP backend; stores no credential. */
 export interface ACPAgentProfile extends AgentProfileBase {
   agent_kind: 'acp';
-  /** ACP provider key: "claude-code" | "codex" | "gemini-cli" | "custom". */
-  acp_server: string;
+  /** ACP provider key, or `'custom'` for a user-supplied command. */
+  acp_server: ACPServerKind;
   acp_model: string | null;
   acp_session_mode: string | null;
   acp_prompt_timeout: number;
@@ -71,13 +79,27 @@ export interface ACPAgentProfile extends AgentProfileBase {
  */
 export type AgentProfile = OpenHandsAgentProfile | ACPAgentProfile;
 
+/**
+ * Request body for `POST /api/agent-profiles/{name}` (create or overwrite).
+ *
+ * Discriminated on `agent_kind`, so a payload cannot mix fields from the other
+ * variant (the server model is `extra=forbid`). Non-discriminant fields are
+ * optional: server-managed identity (`id`/`revision`/`schema_version`) is
+ * minted on create and preserved on overwrite. A field left unset takes the
+ * server-side default where one exists — except `llm_profile_ref`, which is
+ * required for the `openhands` variant (omitting it yields a 422).
+ */
+export type AgentProfileSaveInput =
+  | ({ agent_kind: 'openhands' } & Partial<Omit<OpenHandsAgentProfile, 'agent_kind'>>)
+  | ({ agent_kind: 'acp' } & Partial<Omit<ACPAgentProfile, 'agent_kind'>>);
+
 // ── Summary projection (list endpoint) ──────────────────────────────────────
 
 /** Lightweight summary returned by the list endpoint. */
 export interface AgentProfileSummary {
   id: string | null;
   name: string;
-  agent_kind: string;
+  agent_kind: AgentKind;
   revision: number | null;
   llm_profile_ref: string | null;
   mcp_server_refs: string[] | null;
@@ -92,7 +114,7 @@ export interface AgentProfileSummary {
  * Dangling references are reported here (valid=false) rather than as HTTP errors.
  */
 export interface AgentProfileDiagnostics {
-  agent_kind: string;
+  agent_kind: AgentKind;
   valid: boolean;
   errors: string[];
 

@@ -2,6 +2,7 @@ import { HttpClient } from './http-client';
 import type {
   AgentProfile,
   AgentProfileDiagnostics,
+  AgentProfileSaveInput,
   AgentProfileSummary,
 } from '../models/agent-profile';
 import type { ExposeSecretsMode } from '../models/api';
@@ -30,7 +31,7 @@ export interface AgentProfileListResponse {
 
 export interface AgentProfileDetailResponse {
   name: string;
-  profile: Record<string, unknown>;
+  profile: AgentProfile;
 }
 
 export interface AgentProfileMutationResponse {
@@ -50,9 +51,13 @@ export interface ActivateAgentProfileResponse {
  *
  * Mirrors `agent_profiles_router.py` in the OpenHands agent-server.
  * Error status codes surfaced via `HttpError.status`:
- * - 404: profile not found (get/delete/rename/materialize)
+ * - 404: profile not found (get/rename/materialize)
  * - 409: profile limit exceeded (save) or new_name already exists (rename)
- * - 422: validation error (save) or dangling MCP ref (materialize)
+ * - 422: validation error (save)
+ *
+ * `delete` is idempotent — a missing name resolves 200, not 404. `materialize`
+ * never raises on dangling LLM/MCP refs; they are reported in the response body
+ * (`valid: false`, `dangling_mcp_server_refs`), not as a 4xx.
  */
 export class AgentProfilesClient {
   public readonly host: string;
@@ -91,7 +96,7 @@ export class AgentProfilesClient {
 
   async saveAgentProfile(
     name: string,
-    profile: Partial<AgentProfile> & { agent_kind?: string }
+    profile: AgentProfileSaveInput
   ): Promise<AgentProfileMutationResponse> {
     const response = await this.client.post<AgentProfileMutationResponse>(
       `/api/agent-profiles/${encodeURIComponent(name)}`,

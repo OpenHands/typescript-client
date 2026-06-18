@@ -221,10 +221,13 @@ export type { ACPModelOption, ACPProviderInfo, ACPProviderKey } from './models/a
 
 // Agent profile types (mirrors openhands-sdk agent_profile.py + resolver.py)
 export type {
+  AgentKind,
+  ACPServerKind,
   ProfileVerificationSettings,
   OpenHandsAgentProfile,
   ACPAgentProfile,
   AgentProfile,
+  AgentProfileSaveInput,
   AgentProfileSummary,
   AgentProfileDiagnostics,
   LaunchedProfile,

@@ -19,6 +19,27 @@ export type SwitchPlan =
 // Fields excluded from content comparison (identity / provenance fields).
 const IDENTITY_FIELDS = new Set(['id', 'name', 'revision', 'schema_version', 'agent_kind']);
 
+/**
+ * Deterministic serialization with object keys sorted recursively. Two values
+ * with identical content but different key *insertion order* serialize equal
+ * (array order stays significant). A snapshot round-tripped through storage
+ * must not look "changed" merely because its keys were re-ordered.
+ */
+function stableStringify(value: unknown): string {
+  if (value === undefined) return 'undefined';
+  if (value === null || typeof value !== 'object') {
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map(stableStringify).join(',')}]`;
+  }
+  const obj = value as Record<string, unknown>;
+  const entries = Object.keys(obj)
+    .sort()
+    .map((key) => `${JSON.stringify(key)}:${stableStringify(obj[key])}`);
+  return `{${entries.join(',')}}`;
+}
+
 function changedNonMutableFields(
   a: Record<string, unknown>,
   b: Record<string, unknown>,
@@ -28,7 +49,7 @@ function changedNonMutableFields(
   const changed: string[] = [];
   for (const key of allKeys) {
     if (IDENTITY_FIELDS.has(key) || mutable.has(key)) continue;
-    if (JSON.stringify(a[key]) !== JSON.stringify(b[key])) {
+    if (stableStringify(a[key]) !== stableStringify(b[key])) {
       changed.push(key);
     }
   }
@@ -106,21 +127,27 @@ export function deriveSwitchPlan(
       return { action: 'start-new', reason: 'ACP provider changed' };
     }
 
-    // ACP → ACP (same provider): live only if just acp_model differs and
-    // the provider supports runtime model switching.
+    // ACP → ACP (same provider): acp_model is the only field that can switch
+    // live. Any other content change forces a new conversation.
     const nonMutable = changedNonMutableFields(snapshotRaw, targetRaw, new Set(['acp_model']));
     if (nonMutable.length > 0) {
       return { action: 'start-new', reason: `fields changed: ${nonMutable.join(', ')}` };
     }
+
+    // Identical model (and nothing else changed) → already current, regardless
+    // of provider capability. Check this before the runtime-switch gate so an
+    // unchanged profile is never mistaken for a switch.
+    const modelDiffers = snapshotAcp.acp_model !== targetAcp.acp_model;
+    if (!modelDiffers) {
+      return { action: 'current' };
+    }
+
+    // Model differs → live switch only if the provider supports it.
     if (!providerInfo?.supports_runtime_model_switch) {
       return {
         action: 'start-new',
         reason: 'provider does not support runtime model switch',
       };
-    }
-    const modelDiffers = snapshotAcp.acp_model !== targetAcp.acp_model;
-    if (!modelDiffers) {
-      return { action: 'current' };
     }
     return { action: 'switch-live', mutableFields: ['acp_model'] };
   }

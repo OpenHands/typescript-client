@@ -182,9 +182,18 @@ describe('deriveSwitchPlan', () => {
       }
     });
 
-    it('current when ACP profiles identical except id+revision fastpath skipped but content same', () => {
-      const target: ACPAgentProfile = { ...acpBase };
+    it('current when ACP content identical but id+revision differ (fast-path skipped)', () => {
+      const target: ACPAgentProfile = { ...acpBase, id: 'profile-9', revision: 5 };
       const plan = deriveSwitchPlan(acpBase, target, claudeProvider);
+      expect(plan.action).toBe('current');
+    });
+
+    it('current when ACP content identical even if provider lacks runtime switch', () => {
+      // Regression: an unchanged profile must be "current" regardless of the
+      // provider's runtime-switch capability. providerInfo=null (custom server)
+      // previously returned a spurious "start-new".
+      const target: ACPAgentProfile = { ...acpBase, id: 'profile-9', revision: 5 };
+      const plan = deriveSwitchPlan(acpBase, target, null);
       expect(plan.action).toBe('current');
     });
   });
