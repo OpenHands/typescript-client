@@ -10,6 +10,7 @@ import {
   Workspace,
 } from '../index';
 import {
+  AgentProfilesClient,
   AgentServerVersionError,
   ApiKeysClient,
   BashClient,
@@ -21,6 +22,7 @@ import {
   HooksClient,
   isAgentServerVersionError,
   MCPClient,
+  MetaProfilesClient,
   ProfilesClient,
   SecurityClient,
   ServerClient,
@@ -46,10 +48,16 @@ describe('Auxiliary API clients', () => {
     expect(manager.server).toBeInstanceOf(ServerClient);
     expect(manager.skills).toBeInstanceOf(SkillsClient);
     expect(manager.profiles).toBeInstanceOf(ProfilesClient);
+    expect(manager.agentProfiles).toBeInstanceOf(AgentProfilesClient);
+    expect(manager.metaProfiles).toBeInstanceOf(MetaProfilesClient);
     expect(manager.server.host).toBe('http://example.com');
     expect(manager.server.apiKey).toBe('secret');
     expect(manager.profiles.host).toBe('http://example.com');
     expect(manager.profiles.apiKey).toBe('secret');
+    expect(manager.agentProfiles.host).toBe('http://example.com');
+    expect(manager.agentProfiles.apiKey).toBe('secret');
+    expect(manager.metaProfiles.host).toBe('http://example.com');
+    expect(manager.metaProfiles.apiKey).toBe('secret');
     expect(manager.files).toBeInstanceOf(FileClient);
     expect(manager.workspaces).toBeInstanceOf(WorkspacesClient);
     expect(manager.security).toBeInstanceOf(SecurityClient);
@@ -59,6 +67,177 @@ describe('Auxiliary API clients', () => {
     expect(manager.hooks).toBeInstanceOf(HooksClient);
     expect(manager.mcp).toBeInstanceOf(MCPClient);
     expect(manager.cloudProxy).toBeInstanceOf(CloudProxyClient);
+  });
+
+  describe('AgentProfilesClient', () => {
+    it('listAgentProfiles fetches /api/agent-profiles', async () => {
+      const payload = {
+        profiles: [
+          {
+            id: 'uuid-1',
+            name: 'default',
+            agent_kind: 'openhands',
+            revision: 0,
+            llm_profile_ref: 'gpt-4o',
+            mcp_server_refs: null,
+          },
+        ],
+        active_agent_profile_id: 'uuid-1',
+      };
+      global.fetch = jest.fn().mockResolvedValue(
+        new Response(JSON.stringify(payload), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      ) as typeof fetch;
+
+      const client = new AgentProfilesClient({ host: 'http://example.com', apiKey: 'k' });
+      const result = await client.listAgentProfiles();
+
+      expect(result.active_agent_profile_id).toBe('uuid-1');
+      expect(result.profiles).toHaveLength(1);
+      expect(result.profiles[0].name).toBe('default');
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://example.com/api/agent-profiles',
+        expect.objectContaining({ method: 'GET' })
+      );
+    });
+
+    it('getAgentProfile sets X-Expose-Secrets header when requested', async () => {
+      const payload = { name: 'default', profile: { agent_kind: 'openhands' } };
+      global.fetch = jest.fn().mockResolvedValue(
+        new Response(JSON.stringify(payload), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      ) as typeof fetch;
+
+      const client = new AgentProfilesClient({ host: 'http://example.com' });
+      await client.getAgentProfile('default', { exposeSecrets: 'plaintext' });
+
+      const call = (global.fetch as jest.Mock).mock.calls[0];
+      expect(call[0]).toBe('http://example.com/api/agent-profiles/default');
+      const headers = call[1]?.headers as Record<string, string>;
+      expect(headers['X-Expose-Secrets']).toBe('plaintext');
+    });
+
+    it('saveAgentProfile posts to /api/agent-profiles/{name}', async () => {
+      global.fetch = jest.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({ name: 'myprofile', message: "Agent profile 'myprofile' saved" }),
+          {
+            status: 201,
+            headers: { 'content-type': 'application/json' },
+          }
+        )
+      ) as typeof fetch;
+
+      const client = new AgentProfilesClient({ host: 'http://example.com' });
+      const result = await client.saveAgentProfile('myprofile', {
+        agent_kind: 'openhands',
+        llm_profile_ref: 'gpt-4o',
+      });
+
+      expect(result.name).toBe('myprofile');
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://example.com/api/agent-profiles/myprofile',
+        expect.objectContaining({ method: 'POST' })
+      );
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body as string);
+      expect(body).toEqual({ agent_kind: 'openhands', llm_profile_ref: 'gpt-4o' });
+    });
+
+    it('deleteAgentProfile sends DELETE to /api/agent-profiles/{name}', async () => {
+      global.fetch = jest.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({ name: 'myprofile', message: "Agent profile 'myprofile' deleted" }),
+          {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          }
+        )
+      ) as typeof fetch;
+
+      const client = new AgentProfilesClient({ host: 'http://example.com' });
+      const result = await client.deleteAgentProfile('myprofile');
+
+      expect(result.name).toBe('myprofile');
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://example.com/api/agent-profiles/myprofile',
+        expect.objectContaining({ method: 'DELETE' })
+      );
+    });
+
+    it('renameAgentProfile posts new_name', async () => {
+      global.fetch = jest.fn().mockResolvedValue(
+        new Response(JSON.stringify({ name: 'newname', message: 'renamed' }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      ) as typeof fetch;
+
+      const client = new AgentProfilesClient({ host: 'http://example.com' });
+      await client.renameAgentProfile('oldname', 'newname');
+
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body as string);
+      expect(body.new_name).toBe('newname');
+    });
+
+    it('activateAgentProfile posts to /{profileId}/activate', async () => {
+      const profileId = 'uuid-abc-123';
+      global.fetch = jest
+        .fn()
+        .mockResolvedValue(
+          new Response(
+            JSON.stringify({ id: profileId, message: 'activated', agent_settings_applied: false }),
+            { status: 200, headers: { 'content-type': 'application/json' } }
+          )
+        ) as typeof fetch;
+
+      const client = new AgentProfilesClient({ host: 'http://example.com' });
+      const result = await client.activateAgentProfile(profileId);
+
+      expect(result.id).toBe(profileId);
+      expect(result.agent_settings_applied).toBe(false);
+      expect(global.fetch).toHaveBeenCalledWith(
+        `http://example.com/api/agent-profiles/${profileId}/activate`,
+        expect.objectContaining({ method: 'POST' })
+      );
+    });
+
+    it('materializeAgentProfile posts to /{name}/materialize', async () => {
+      const diagnostics = {
+        agent_kind: 'openhands',
+        valid: true,
+        errors: [],
+        llm_profile_ref: 'gpt-4o',
+        llm_profile_resolved: true,
+        llm_api_key_set: true,
+        mcp_server_refs: null,
+        resolved_mcp_servers: [],
+        dangling_mcp_server_refs: [],
+        acp_api_key_secret_name: null,
+        acp_base_url_secret_name: null,
+        acp_file_secret_names: [],
+        resolved_settings: {},
+      };
+      global.fetch = jest.fn().mockResolvedValue(
+        new Response(JSON.stringify(diagnostics), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      ) as typeof fetch;
+
+      const client = new AgentProfilesClient({ host: 'http://example.com' });
+      const result = await client.materializeAgentProfile('default');
+
+      expect(result.valid).toBe(true);
+      expect(result.llm_profile_ref).toBe('gpt-4o');
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://example.com/api/agent-profiles/default/materialize',
+        expect.objectContaining({ method: 'POST' })
+      );
+    });
   });
 
   it('Workspace exposes bash namespace', () => {
@@ -658,6 +837,125 @@ describe('Auxiliary API clients', () => {
         method: 'POST',
         body: '{}',
       })
+    );
+  });
+
+  it('MetaProfilesClient.listMetaProfiles GETs the meta-profiles endpoint', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          meta_profiles: [
+            {
+              name: 'balanced',
+              classifier_model: 'classifier',
+              default_model: 'default',
+              num_classes: 2,
+            },
+          ],
+          active_meta_profile: 'balanced',
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      )
+    ) as typeof fetch;
+
+    const client = new MetaProfilesClient({ host: 'http://example.com' });
+    const result = await client.listMetaProfiles();
+
+    expect(result.meta_profiles).toHaveLength(1);
+    expect(result.meta_profiles[0].name).toBe('balanced');
+    expect(result.active_meta_profile).toBe('balanced');
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/meta-profiles',
+      expect.objectContaining({ method: 'GET' })
+    );
+  });
+
+  it('MetaProfilesClient.getMetaProfile percent-encodes the name', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          name: 'my profile',
+          config: {
+            classifier_model: 'classifier',
+            default_model: 'default',
+            classes: [{ description: 'UI', model: 'fast' }],
+          },
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      )
+    ) as typeof fetch;
+
+    const client = new MetaProfilesClient({ host: 'http://example.com' });
+    const result = await client.getMetaProfile('my profile');
+
+    expect(result.name).toBe('my profile');
+    expect(result.config.classes).toHaveLength(1);
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/meta-profiles/my%20profile',
+      expect.objectContaining({ method: 'GET' })
+    );
+  });
+
+  it('MetaProfilesClient.saveMetaProfile POSTs the meta-profile body', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ name: 'balanced', message: "Meta-profile 'balanced' saved" }), {
+        status: 201,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const client = new MetaProfilesClient({ host: 'http://example.com' });
+    const config = {
+      classifier_model: 'classifier',
+      default_model: 'default',
+      classes: [{ description: 'tests', model: 'slow' }],
+    };
+    const result = await client.saveMetaProfile('balanced', config);
+
+    expect(result.name).toBe('balanced');
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/meta-profiles/balanced',
+      expect.objectContaining({ method: 'POST', body: JSON.stringify(config) })
+    );
+  });
+
+  it('MetaProfilesClient.deleteMetaProfile DELETEs the meta-profile endpoint', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({ name: 'balanced', message: "Meta-profile 'balanced' deleted" }),
+          { status: 200, headers: { 'content-type': 'application/json' } }
+        )
+      ) as typeof fetch;
+
+    const client = new MetaProfilesClient({ host: 'http://example.com' });
+    const result = await client.deleteMetaProfile('balanced');
+
+    expect(result.name).toBe('balanced');
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/meta-profiles/balanced',
+      expect.objectContaining({ method: 'DELETE' })
+    );
+  });
+
+  it('MetaProfilesClient.activateMetaProfile POSTs to the activate endpoint', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({ name: 'balanced', message: "Meta-profile 'balanced' activated" }),
+          { status: 200, headers: { 'content-type': 'application/json' } }
+        )
+      ) as typeof fetch;
+
+    const client = new MetaProfilesClient({ host: 'http://example.com' });
+    const result = await client.activateMetaProfile('balanced');
+
+    expect(result.name).toBe('balanced');
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/meta-profiles/balanced/activate',
+      expect.objectContaining({ method: 'POST', body: '{}' })
     );
   });
 
