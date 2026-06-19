@@ -56,6 +56,7 @@
     "test:integration:llm": "jest --config jest.integration.config.cjs --runInBand --testPathIgnorePatterns=\"deterministic-api.integration.test.ts|bash.integration.test.ts\"",
     "test:git-dependency": "node ./scripts/smoke-test-git-dependency.mjs",
     "test:all": "npm run test && npm run test:integration && npm run test:git-dependency",
+    "audit:endpoints": "node ./scripts/endpoint-audit.mjs",
     "dev": "tsc --watch",
     "clean": "rimraf dist",
     "prepare": "npm run clean && npm run build",

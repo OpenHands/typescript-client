@@ -1,0 +1,33 @@
+{
+  "specs": [
+    {
+      "name": "agent-server",
+      "url": "http://localhost:8010/openapi.json",
+      "file": "specs/agent-server.openapi.json"
+    }
+  ],
+  "clientGlobs": ["src/client", "src/conversation", "src/workspace"],
+
+  "externalPrefixes": [
+    "/api/security/",
+    "/api/meta-profiles",
+    "/api/keys",
+    "/api/shared-",
+    "/api/accept_tos",
+    "/api/unset-provider-tokens"
+  ],
+
+  "ignoreServerOnly": ["/v1/"],
+
+  "_comment_allowClientOnly": "Baselined drift against agent-server 1.29.0. Each entry is the client calling an endpoint the server no longer exposes (a TODO to fix in the client), not an endorsement. Remove entries as they are fixed; new drift is NOT allowlisted and will fail the gate. cloud-proxy + generate_title were dropped server-side; skills uses /update but the server now exposes /refresh.",
+  "allowClientOnly": [
+    "POST /api/cloud-proxy",
+    "POST /api/conversations/{}/generate_title",
+    "POST /api/skills/installed/{}/update"
+  ],
+
+  "gate": {
+    "mismatch": true,
+    "missingApi": false
+  }
+}
