@@ -1,5 +1,5 @@
 {
-  "_comment": "Endpoint audit config. The client is GATED against the agent-server only: any client call not on the agent-server fails the gate. Additional `classify` specs are fetched (live, with a committed fallback) purely to label each gated call with the backend that actually serves it (cloud) vs no known backend at all. See scripts/endpoint-audit.mjs.",
+  "_comment": "Endpoint audit config. The client is GATED against the agent-server only: any client call not on the agent-server fails the gate. Additional `classify` specs are fetched live purely to label each gated call with the backend that actually serves it (cloud) vs no known backend at all; if a classify spec is unreachable its labels just degrade to 'no known backend'. See scripts/endpoint-audit.mjs.",
   "specs": [
     {
       "name": "agent-server",
@@ -10,8 +10,7 @@
     {
       "name": "cloud",
       "role": "classify",
-      "url": "https://app.all-hands.dev/openapi.json",
-      "file": "specs/cloud.openapi.json"
+      "url": "https://app.all-hands.dev/openapi.json"
     }
   ],
   "clientGlobs": ["src/client", "src/conversation", "src/workspace"],
