@@ -2,9 +2,8 @@ name: Endpoint Audit
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, develop ]
 
 jobs:
   # Verify the client doesn't call endpoints the agent-server no longer exposes.
