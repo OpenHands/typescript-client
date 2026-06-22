@@ -337,7 +337,7 @@ Required GitHub secrets:
 
 ### CI Image Version
 
-- The agent-server image is defined **once** in `package.json` under `config.agentServerImage` (currently `ghcr.io/openhands/agent-server:1.29.0-python`, corresponding to the `software-agent-sdk` release `v1.29.0`). The `integration-tests.yml` and `endpoint-audit.yml` workflows read it from there at runtime, so bump the version in that single place (and the local-setup snippets above).
+- The agent-server image is defined **once** in `package.json` under `config.agentServerImage`. The `integration-tests.yml` and `endpoint-audit.yml` workflows read it from there at runtime, so bump the version in that single place (and the local-setup snippets above).
 - Keep the TypeScript client tests strict against that released server image rather than adding compatibility fallbacks for older prerelease builds.
 
 ## Agent Behavior Guidelines
