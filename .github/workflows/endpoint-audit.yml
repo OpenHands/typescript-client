@@ -50,6 +50,8 @@ jobs:
         with:
           name: endpoint-audit
           path: .audit/
+          # .audit/ is a dot-directory; upload-artifact@v4 skips hidden paths by default.
+          include-hidden-files: true
 
       - name: Stop agent-server
         if: always()
