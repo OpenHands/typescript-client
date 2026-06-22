@@ -94,19 +94,35 @@ jobs:
               .join('\n');
             const classifiers =
               r.classifiers && r.classifiers.length ? ` · classifiers: ${r.classifiers.join(', ')}` : '';
+            const summary = [
+              '| Category | Count |',
+              '| --- | ---: |',
+              `| ❌ Off-contract (not on agent-server) | ${offContract.length} |`,
+              ...Object.keys(byBackend)
+                .sort()
+                .map((name) =>
+                  name === NO_BACKEND
+                    ? `| &nbsp;&nbsp;⛔ no known backend | ${byBackend[name].length} |`
+                    : `| &nbsp;&nbsp;↗️ served by \`${name}\` | ${byBackend[name].length} |`
+                ),
+              `| ➕ Missing API (agent-server has, client lacks) | ${(r.missingApi || []).length} |`,
+              `| agent-server endpoints | ${r.agentServer} |`,
+              `| client endpoints | ${r.client} |`,
+            ].join('\n');
             const body = [
               marker,
               '## Endpoint audit',
               '',
-              `**${status}** — agent-server endpoints: ${r.agentServer}, client endpoints: ${r.client}${classifiers}`,
+              `**${status}**${classifiers}`,
+              '',
+              summary,
               '',
               `### ❌ Not on agent-server (gated, ${offContract.length})`,
               '',
               offContract.length ? backendSections : '_none_',
-              `<details><summary>➕ Missing API — agent-server exposes it, client does not implement (${(r.missingApi || []).length})</summary>`,
+              `### ➕ Missing API — agent-server exposes it, client does not implement (${(r.missingApi || []).length})`,
               '',
               list(r.missingApi),
-              '</details>',
             ].join('\n');
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
