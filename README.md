@@ -377,7 +377,8 @@ Integration tests require a running agent-server in Docker with a mounted worksp
    chmod 777 /tmp/agent-workspace
    ```
 
-2. Start the agent-server container (software-agent-sdk v1.29.0):
+2. Start the agent-server container (software-agent-sdk v1.29.0; the canonical
+   image pin lives in `package.json` under `config.agentServerImage`):
 
    ```bash
    docker run -d \

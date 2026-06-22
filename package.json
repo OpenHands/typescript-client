@@ -41,6 +41,9 @@
       }
     }
   },
+  "config": {
+    "agentServerImage": "ghcr.io/openhands/agent-server:1.29.0-python"
+  },
   "scripts": {
     "build": "tsc && node ./scripts/copy-json-assets.mjs && node ./scripts/rewrite-relative-imports.mjs",
     "lint": "eslint src/**/*.ts",
