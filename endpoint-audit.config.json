@@ -4,8 +4,7 @@
     {
       "name": "agent-server",
       "role": "gate",
-      "url": "http://localhost:8010/openapi.json",
-      "file": "specs/agent-server.openapi.json"
+      "url": "http://localhost:8010/openapi.json"
     },
     {
       "name": "cloud",
