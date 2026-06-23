@@ -362,6 +362,9 @@ export type {
   MCPTestResponse,
   SharedConversation,
   EventPage as ApiEventPage,
+  InitState,
+  InitStatus,
+  InitRequest,
 } from './models/api';
 
 export type { WebSocketClientOptions } from './events/websocket-client';

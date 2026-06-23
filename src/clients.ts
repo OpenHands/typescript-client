@@ -5,6 +5,7 @@ export { CloudProxyClient } from './client/cloud-proxy-client';
 export { ConversationClient } from './client/conversation-client';
 export { FileClient } from './client/file-client';
 export { HooksClient } from './client/hooks-client';
+export { InitClient } from './client/init-client';
 export { LLMMetadataClient } from './client/llm-client';
 export { MCPClient } from './client/mcp-client';
 export { ProfilesClient } from './client/profiles-client';
@@ -37,6 +38,7 @@ export type {
 } from './client/conversation-client';
 export type { FileClientOptions, FileUploadContent } from './client/file-client';
 export type { HooksClientOptions } from './client/hooks-client';
+export type { InitClientOptions, InitializeOptions } from './client/init-client';
 export type { LLMMetadataClientOptions } from './client/llm-client';
 export type { MCPClientOptions } from './client/mcp-client';
 export type { ProfilesClientOptions, GetProfileOptions } from './client/profiles-client';

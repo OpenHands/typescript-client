@@ -19,6 +19,7 @@ import {
   ConversationClient,
   FileClient,
   HooksClient,
+  InitClient,
   isAgentServerVersionError,
   LLMMetadataClient,
   MCPClient,
@@ -509,7 +510,7 @@ describe('Auxiliary API clients', () => {
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       6,
-      'http://example.com/api/skills/installed/my-skill/update',
+      'http://example.com/api/skills/installed/my-skill/refresh',
       expect.objectContaining({ method: 'POST' })
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
@@ -1954,5 +1955,140 @@ describe('Auxiliary API clients', () => {
       'http://example.com/api/shared-events/search?conversation_id=shared-1&limit=50',
       expect.objectContaining({ method: 'GET' })
     );
+  });
+
+  it('ConversationManager exposes the init namespace', () => {
+    const manager = new ConversationManager({ host: 'http://example.com', apiKey: 'secret' });
+
+    expect(manager.init).toBeInstanceOf(InitClient);
+    expect(manager.init.host).toBe('http://example.com');
+    expect(manager.init.apiKey).toBe('secret');
+  });
+
+  it('BashClient.batchGetEvents GETs the batch endpoint with repeated event_ids', async () => {
+    const events = [{ id: 'e1', kind: 'BashOutput', timestamp: '2026-05-23T12:00:00Z' }, null];
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify(events), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const client = new BashClient({ host: 'http://example.com' });
+    const result = await client.batchGetEvents(['e1', 'missing']);
+
+    expect(result).toHaveLength(2);
+    expect(result[0]?.id).toBe('e1');
+    expect(result[1]).toBeNull();
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/bash/bash_events/?event_ids=e1&event_ids=missing',
+      expect.objectContaining({ method: 'GET' })
+    );
+  });
+
+  it('ConversationClient.batchGetEvents GETs the events batch endpoint with repeated event_ids', async () => {
+    const event = { id: 'ev1', kind: 'MessageEvent', timestamp: '2026-05-23T12:00:00Z' };
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify([event, null]), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const client = new ConversationClient({ host: 'http://example.com' });
+    const result = await client.batchGetEvents('c1', ['ev1', 'missing']);
+
+    expect(result[0]?.id).toBe('ev1');
+    expect(result[1]).toBeNull();
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/conversations/c1/events?event_ids=ev1&event_ids=missing',
+      expect.objectContaining({ method: 'GET' })
+    );
+  });
+
+  it('ConversationClient workspace methods serve the static file routes as blobs', async () => {
+    global.fetch = jest.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response('<html>workspace</html>', {
+          status: 200,
+          headers: { 'content-type': 'text/html' },
+        })
+      )
+    ) as typeof fetch;
+
+    const client = new ConversationClient({ host: 'http://example.com' });
+    const root = await client.getWorkspaceRoot('c1');
+    const file = await client.getWorkspaceFile('c1', 'sub/dir/page.html');
+
+    expect(root).toBeInstanceOf(Blob);
+    expect(await file.text()).toBe('<html>workspace</html>');
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      1,
+      'http://example.com/api/conversations/c1/workspace',
+      expect.objectContaining({ method: 'GET' })
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      2,
+      'http://example.com/api/conversations/c1/workspace/sub/dir/page.html',
+      expect.objectContaining({ method: 'GET' })
+    );
+  });
+
+  it('InitClient.getStatus GETs /api/init', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ state: 'dormant', error: null }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const client = new InitClient({ host: 'http://example.com' });
+    const status = await client.getStatus();
+
+    expect(status.state).toBe('dormant');
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/init',
+      expect.objectContaining({ method: 'GET' })
+    );
+  });
+
+  it('InitClient.initialize POSTs /api/init with the X-Init-API-Key header and body', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ state: 'ready', error: null }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const client = new InitClient({ host: 'http://example.com' });
+    const status = await client.initialize(
+      { session_api_keys: ['user-key'], max_concurrent_runs: 4 },
+      { initApiKey: 'bootstrap-secret' }
+    );
+
+    expect(status.state).toBe('ready');
+    const [url, init] = (global.fetch as jest.Mock).mock.calls[0];
+    expect(url).toBe('http://example.com/api/init');
+    expect(init.method).toBe('POST');
+    expect(init.body).toBe(
+      JSON.stringify({ session_api_keys: ['user-key'], max_concurrent_runs: 4 })
+    );
+    expect((init.headers as Record<string, string>)['X-Init-API-Key']).toBe('bootstrap-secret');
+  });
+
+  it('InitClient.initialize omits the X-Init-API-Key header when no key is given', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ state: 'ready', error: null }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const client = new InitClient({ host: 'http://example.com' });
+    await client.initialize();
+
+    const [, init] = (global.fetch as jest.Mock).mock.calls[0];
+    expect(init.body).toBe(JSON.stringify({}));
+    expect((init.headers as Record<string, string>)['X-Init-API-Key']).toBeUndefined();
   });
 });

@@ -8,6 +8,7 @@ import {
   uniqueDirName,
   uniqueFileName,
   workspaceFileExists,
+  writeWorkspaceFile,
 } from './test-utils';
 
 const config = getServerTestConfig();
@@ -388,6 +389,133 @@ describe('Deterministic API Integration Tests', () => {
       } finally {
         client.close();
       }
+    },
+    config.testTimeout
+  );
+
+  it(
+    'batch-gets conversation events via the server endpoint',
+    async () => {
+      // Contract guard for GET /api/conversations/{id}/events (the server-side
+      // batch endpoint, distinct from the per-id loop in getEvents). A real
+      // conversation with a bogus event id must come back as [null], proving
+      // the route resolves and preserves the missing-item-as-null contract.
+      const client = new ConversationClient({ host: config.agentServerUrl });
+      const conversation = await manager.createConversation(createDummyAgent(), {
+        workingDir: config.agentWorkspaceDir,
+      });
+      try {
+        const missing = '00000000-0000-0000-0000-000000000000';
+        const batch = await client.batchGetEvents(conversation.id, [missing]);
+        expect(batch).toEqual([null]);
+
+        // A non-existent conversation reaches the handler and must 404.
+        let status: number | undefined;
+        try {
+          await client.batchGetEvents(missing, [missing]);
+        } catch (error) {
+          expect(error).toBeInstanceOf(HttpError);
+          status = (error as HttpError).status;
+        }
+        expect(status).toBe(404);
+      } finally {
+        await manager.deleteConversation(conversation.id).catch(() => undefined);
+        client.close();
+      }
+    },
+    config.testTimeout
+  );
+
+  it(
+    'serves conversation workspace files over the static workspace routes',
+    async () => {
+      // Exercises GET /api/conversations/{id}/workspace (root index.html) and
+      // GET /api/conversations/{id}/workspace/{file_path}. The conversation's
+      // working dir is the mounted workspace, so files written there are served
+      // back verbatim through the static routes.
+      const client = new ConversationClient({ host: config.agentServerUrl });
+      const conversation = await manager.createConversation(createDummyAgent(), {
+        workingDir: config.agentWorkspaceDir,
+      });
+      const rootIndex = 'index.html';
+      const nestedDir = uniqueDirName('ws-serve');
+      const nestedFile = `${nestedDir}/page.html`;
+      const rootContent = '<html><body>workspace root</body></html>';
+      const nestedContent = '<html><body>nested workspace page</body></html>';
+      try {
+        writeWorkspaceFile(rootIndex, rootContent);
+        writeWorkspaceFile(nestedFile, nestedContent);
+        await sleep(300);
+
+        const servedRoot = await client.getWorkspaceRoot(conversation.id);
+        const servedFile = await client.getWorkspaceFile(conversation.id, nestedFile);
+        expect(servedRoot).toBeInstanceOf(Blob);
+        expect(await servedRoot.text()).toBe(rootContent);
+        expect(await servedFile.text()).toBe(nestedContent);
+
+        // A file the workspace does not contain yields 404.
+        let missingStatus: number | undefined;
+        try {
+          await client.getWorkspaceFile(conversation.id, `${nestedDir}/missing.html`);
+        } catch (error) {
+          expect(error).toBeInstanceOf(HttpError);
+          missingStatus = (error as HttpError).status;
+        }
+        expect(missingStatus).toBe(404);
+      } finally {
+        deleteWorkspaceFile(rootIndex);
+        await workspace.executeCommand(`rm -rf ${config.agentWorkspaceDir}/${nestedDir}`);
+        await manager.deleteConversation(conversation.id).catch(() => undefined);
+        client.close();
+      }
+    },
+    config.testTimeout
+  );
+
+  it(
+    'reaches the deferred-init routes and reports not-deferred with 404',
+    async () => {
+      // The pinned image runs in the normal (non-deferred) mode, so no
+      // InitService is registered and both /api/init routes answer 404 via
+      // get_init_service. A 404 (not a 405/422) proves the GET and POST routes
+      // exist on the image AND that the client targets the right path/method —
+      // client<->server contract drift the mocked unit tests cannot catch.
+      let getStatus: number | undefined;
+      try {
+        await manager.init.getStatus();
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpError);
+        getStatus = (error as HttpError).status;
+      }
+      expect(getStatus).toBe(404);
+
+      let postStatus: number | undefined;
+      try {
+        await manager.init.initialize({ session_api_keys: ['noop'] });
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpError);
+        postStatus = (error as HttpError).status;
+      }
+      expect(postStatus).toBe(404);
+    },
+    config.testTimeout
+  );
+
+  it(
+    'reaches the skills refresh route and 404s for an uninstalled skill',
+    async () => {
+      // Contract guard for POST /api/skills/installed/{name}/refresh (the route
+      // is /refresh, not /update). A valid-but-uninstalled skill name reaches
+      // the handler, which must answer 404 — proving the route exists on the
+      // image and the client targets the corrected path.
+      let status: number | undefined;
+      try {
+        await manager.skills.refreshSkill('nonexistent-skill');
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpError);
+        status = (error as HttpError).status;
+      }
+      expect(status).toBe(404);
     },
     config.testTimeout
   );
