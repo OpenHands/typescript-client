@@ -1,0 +1,189 @@
+name: Bump Agent Server (SDK) Version
+
+# Bumps the pinned OpenHands software-agent-sdk / agent-server image that this
+# client is tested and documented against. The agent-server image tag
+# (e.g. 1.29.0-python) corresponds 1:1 to a software-agent-sdk release (v1.29.0).
+#
+# Source of truth is package.json -> config.agentServerImage; this workflow also
+# updates the doc/CI references that hardcode the same version, then opens a PR.
+# Opening a PR (via the bot PAT) runs CI + integration tests against the NEW
+# image, which is the whole point — it proves the client still works before the
+# bump is merged.
+#
+# It does NOT release the npm package: the tracked agent-server version is
+# decoupled from this package's own version. Cut a client release separately via
+# prepare-release.yml.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'software-agent-sdk version to pin (e.g. 1.30.0). Leave blank to use the latest SDK release.'
+        required: false
+        type: string
+  # Weekly check for a newer SDK release. Remove this block to make the bump
+  # manual-only.
+  schedule:
+    - cron: '0 9 * * 1'
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.OPENHANDS_BOT_GITHUB_PAT_PUBLIC }}
+
+      - name: Determine current and target versions
+        id: versions
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          set -euo pipefail
+
+          # Current pinned version, parsed from the source of truth.
+          CURRENT_IMAGE=$(node -p "require('./package.json').config.agentServerImage")
+          CURRENT="${CURRENT_IMAGE##*:}"   # 1.29.0-python
+          CURRENT="${CURRENT%-python}"      # 1.29.0
+          echo "Current pinned version: $CURRENT"
+
+          # Target version: explicit input, else latest non-prerelease SDK release.
+          if [ -n "${INPUT_VERSION:-}" ]; then
+            TARGET="$INPUT_VERSION"
+            echo "Target version (from input): $TARGET"
+          else
+            TARGET=$(gh release list --repo OpenHands/software-agent-sdk \
+              --exclude-drafts --exclude-pre-releases --limit 1 \
+              --json tagName --jq '.[0].tagName')
+            TARGET="${TARGET#v}"
+            echo "Target version (latest SDK release): $TARGET"
+          fi
+
+          if ! [[ "$TARGET" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Invalid target version: '$TARGET' (expected X.Y.Z)"
+            exit 1
+          fi
+
+          if [ "$TARGET" = "$CURRENT" ]; then
+            echo "✅ Already pinned to $TARGET — nothing to do."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+          echo "target=$TARGET" >> "$GITHUB_OUTPUT"
+
+      - name: Verify the agent-server image exists in GHCR
+        if: steps.versions.outputs.changed == 'true'
+        env:
+          TARGET: ${{ steps.versions.outputs.target }}
+        run: |
+          IMAGE="ghcr.io/openhands/agent-server:${TARGET}-python"
+          echo "🔍 Checking $IMAGE ..."
+          if docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
+            echo "✅ $IMAGE is published"
+          else
+            echo "⚠️ $IMAGE is not published yet — the SDK release may exist but its"
+            echo "   agent-server image has not been built. Skipping bump for now."
+            echo "SKIP=true" >> "$GITHUB_ENV"
+          fi
+
+      - name: Update pinned version across the repo
+        if: steps.versions.outputs.changed == 'true' && env.SKIP != 'true'
+        env:
+          CURRENT: ${{ steps.versions.outputs.current }}
+          TARGET: ${{ steps.versions.outputs.target }}
+        run: |
+          set -euo pipefail
+          FILES=(
+            package.json
+            .github/workflows/integration-tests.yml
+            AGENTS.md
+            README.md
+          )
+          for f in "${FILES[@]}"; do
+            sed -i \
+              -e "s#agent-server:${CURRENT}-python#agent-server:${TARGET}-python#g" \
+              -e "s#software-agent-sdk v${CURRENT}#software-agent-sdk v${TARGET}#g" \
+              -e "s#\`v${CURRENT}\`#\`v${TARGET}\`#g" \
+              "$f"
+          done
+          echo "📝 Updated references ${CURRENT} -> ${TARGET}"
+          git diff --stat
+
+      - name: Open bump PR
+        if: steps.versions.outputs.changed == 'true' && env.SKIP != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.OPENHANDS_BOT_GITHUB_PAT_PUBLIC }}
+          CURRENT: ${{ steps.versions.outputs.current }}
+          TARGET: ${{ steps.versions.outputs.target }}
+        run: |
+          set -euo pipefail
+          BRANCH="bump-agent-server-${TARGET}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if git diff --quiet; then
+            echo "⚠️ No changes produced — nothing to open a PR for."
+            exit 0
+          fi
+
+          git checkout -b "$BRANCH"
+          git add package.json .github/workflows/integration-tests.yml AGENTS.md README.md
+          git commit -m "Bump agent-server (software-agent-sdk) to v${TARGET}"
+          git push -u origin "$BRANCH" --force-with-lease
+
+          EXISTING_PR=$(gh pr list --head "$BRANCH" --json number --jq '.[0].number')
+          if [ -n "$EXISTING_PR" ]; then
+            echo "✅ PR #$EXISTING_PR already exists for $BRANCH"
+            exit 0
+          fi
+
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "Bump agent-server (software-agent-sdk) to v${TARGET}" \
+            --body "## Bump tracked agent-server / SDK version
+
+          Updates the pinned OpenHands \`software-agent-sdk\` / agent-server image
+          from **v${CURRENT}** to **v${TARGET}**.
+
+          Updated references:
+          - \`package.json\` → \`config.agentServerImage\`
+          - \`.github/workflows/integration-tests.yml\` → \`AGENT_SERVER_IMAGE\`
+          - \`AGENTS.md\` and \`README.md\` documentation
+
+          CI + integration tests on this PR run against
+          \`ghcr.io/openhands/agent-server:${TARGET}-python\`, validating the client
+          against the new server before merge.
+
+          > This does **not** release the npm package. Cut a client release
+          > separately via the **Prepare Release** workflow.
+
+          ---
+          _Automatically created by the bump-agent-server-version workflow._"
+          echo "✅ Opened PR for $BRANCH"
+
+      - name: Summary
+        if: always()
+        env:
+          CURRENT: ${{ steps.versions.outputs.current }}
+          TARGET: ${{ steps.versions.outputs.target }}
+          CHANGED: ${{ steps.versions.outputs.changed }}
+        run: |
+          {
+            echo "## Bump Agent Server (SDK) Version"
+            echo ""
+            echo "- **Current**: ${CURRENT:-unknown}"
+            echo "- **Target**: ${TARGET:-unknown}"
+            if [ "${CHANGED:-false}" != "true" ]; then
+              echo "- **Result**: already up to date"
+            elif [ "${SKIP:-false}" = "true" ]; then
+              echo "- **Result**: target image not published yet — skipped"
+            else
+              echo "- **Result**: bump PR opened (\`bump-agent-server-${TARGET}\`)"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
