@@ -37,17 +37,12 @@ export class PluginsClient {
   }
 
   async installPlugin(request: InstallPluginRequest): Promise<InstalledPluginInfo> {
-    const response = await this.client.post<InstalledPluginInfo>(
-      '/api/plugins/install',
-      request
-    );
+    const response = await this.client.post<InstalledPluginInfo>('/api/plugins/install', request);
     return response.data;
   }
 
   async listInstalledPlugins(): Promise<InstalledPluginsResponse> {
-    const response = await this.client.get<InstalledPluginsResponse>(
-      '/api/plugins/installed'
-    );
+    const response = await this.client.get<InstalledPluginsResponse>('/api/plugins/installed');
     return response.data;
   }
 
@@ -58,10 +53,7 @@ export class PluginsClient {
     return response.data;
   }
 
-  async setPluginEnabled(
-    pluginName: string,
-    enabled: boolean
-  ): Promise<TogglePluginResponse> {
+  async setPluginEnabled(pluginName: string, enabled: boolean): Promise<TogglePluginResponse> {
     const response = await this.client.patch<TogglePluginResponse>(
       `/api/plugins/installed/${encodeURIComponent(pluginName)}`,
       { enabled }
