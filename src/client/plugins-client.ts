@@ -23,9 +23,7 @@ export class PluginsClient {
   }
 
   async getPluginsMarketplace(): Promise<MarketplaceCatalogResponse> {
-    const response = await this.client.get<MarketplaceCatalogResponse>(
-      '/api/plugins/marketplace'
-    );
+    const response = await this.client.get<MarketplaceCatalogResponse>('/api/plugins/marketplace');
     return response.data;
   }
 
