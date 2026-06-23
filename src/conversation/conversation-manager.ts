@@ -14,7 +14,6 @@ import { MCPClient } from '../client/mcp-client';
 import { ProfilesClient } from '../client/profiles-client';
 import { MetaProfilesClient } from '../client/meta-profiles-client';
 import { ServerClient } from '../client/server-client';
-import { SecurityClient } from '../client/security-client';
 import { SessionClient } from '../client/session-client';
 import { SettingsClient } from '../client/settings-client';
 import { SharedClient } from '../client/shared-client';
@@ -95,7 +94,6 @@ export class ConversationManager {
   public readonly desktop: DesktopClient;
   public readonly files: FileClient;
   public readonly workspaces: WorkspacesClient;
-  public readonly security: SecurityClient;
   public readonly apiKeys: ApiKeysClient;
   public readonly session: SessionClient;
   public readonly shared: SharedClient;
@@ -131,7 +129,6 @@ export class ConversationManager {
     this.desktop = new DesktopClient(clientOptions);
     this.files = new FileClient(clientOptions);
     this.workspaces = new WorkspacesClient(clientOptions);
-    this.security = new SecurityClient(clientOptions);
     this.apiKeys = new ApiKeysClient(clientOptions);
     this.session = new SessionClient(clientOptions);
     this.shared = new SharedClient(clientOptions);
@@ -274,7 +271,7 @@ export class ConversationManager {
     options: ConversationSearchRequest = {}
   ): Promise<ACPConversationSearchResponse> {
     const response = await this.client.get<ACPConversationSearchResponse>(
-      '/api/acp/conversations/search',
+      '/api/conversations/search',
       {
         params: options as Record<string, unknown>,
       }
@@ -288,7 +285,7 @@ export class ConversationManager {
   async countACPConversations(
     options: { status?: ConversationExecutionStatus } = {}
   ): Promise<number> {
-    const response = await this.client.get<number>('/api/acp/conversations/count', {
+    const response = await this.client.get<number>('/api/conversations/count', {
       params: options,
     });
     return response.data;
@@ -301,7 +298,7 @@ export class ConversationManager {
     conversationIds: ConversationID[]
   ): Promise<Array<ACPConversationInfo | null>> {
     const response = await this.client.get<Array<ACPConversationInfo | null>>(
-      '/api/acp/conversations',
+      '/api/conversations',
       {
         params: { ids: conversationIds },
       }
@@ -334,7 +331,7 @@ export class ConversationManager {
    */
   async getACPConversation(conversationId: ConversationID): Promise<ACPConversationInfo> {
     const response = await this.client.get<ACPConversationInfo>(
-      `/api/acp/conversations/${conversationId}`
+      `/api/conversations/${conversationId}`
     );
     return response.data;
   }
@@ -369,7 +366,7 @@ export class ConversationManager {
       user_id: options.userId ?? null,
     };
 
-    const response = await this.client.post<ACPConversationInfo>('/api/acp/conversations', request);
+    const response = await this.client.post<ACPConversationInfo>('/api/conversations', request);
     return response.data;
   }
 
@@ -418,7 +415,6 @@ export class ConversationManager {
     this.desktop.close();
     this.files.close();
     this.workspaces.close();
-    this.security.close();
     this.apiKeys.close();
     this.session.close();
     this.shared.close();
