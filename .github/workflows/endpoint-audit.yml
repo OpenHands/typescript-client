@@ -3,7 +3,6 @@ name: Endpoint Audit
 on:
   push:
     branches: [ '**' ]
-  pull_request:
 
 # Needed so the audit can post its report as a comment on the PR.
 permissions:

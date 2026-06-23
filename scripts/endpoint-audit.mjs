@@ -47,13 +47,17 @@ async function loadSpec(spec) {
       if (res.ok) return await res.json();
       console.warn(`  ! ${spec.name}: ${spec.url} -> HTTP ${res.status}, falling back to file`);
     } catch (e) {
-      console.warn(`  ! ${spec.name}: ${spec.url} unreachable (${e.message}), falling back to file`);
+      console.warn(
+        `  ! ${spec.name}: ${spec.url} unreachable (${e.message}), falling back to file`
+      );
     }
   }
   if (spec.file && fs.existsSync(path.join(ROOT, spec.file)))
     return JSON.parse(fs.readFileSync(path.join(ROOT, spec.file), 'utf8'));
   if (spec.role === 'classify') {
-    console.warn(`  ! ${spec.name}: no reachable url and no fallback file — skipping (classify only)`);
+    console.warn(
+      `  ! ${spec.name}: no reachable url and no fallback file — skipping (classify only)`
+    );
     return null;
   }
   throw new Error(`spec "${spec.name}": no reachable url and no fallback file`);
