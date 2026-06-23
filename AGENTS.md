@@ -301,26 +301,25 @@ and merge the PR. Everything after merge is automatic.
 
 **Prerequisite:** the `OPENHANDS_BOT_GITHUB_PAT_PUBLIC` secret (classic PAT with
 `repo` + `workflow` scope) must be available to the repo (it may be inherited
-from an org-level secret). Without it, `prepare-release.yml`,
-`version-bump-prs.yml`, and `bump-agent-server-version.yml` cannot open PRs.
+from an org-level secret). Without it, `prepare-release.yml` and
+`version-bump-prs.yml` cannot open PRs.
 
 ### Tracking the agent-server / SDK version
 
-This client is tested and documented against a specific
-`software-agent-sdk` release, expressed as the agent-server image tag
+This client is tested and documented against a specific `software-agent-sdk`
+release, expressed as the agent-server image tag
 (`ghcr.io/openhands/agent-server:<version>-python`, where `<version>` equals the
 SDK release `vX.Y.Z`). The **source of truth** is `package.json` →
 `config.agentServerImage`; `integration-tests.yml`, `AGENTS.md`, and `README.md`
 mirror the same version.
 
-`bump-agent-server-version.yml` keeps this up to date. It runs on a weekly
-schedule (and on manual `workflow_dispatch`, optionally with an explicit
-`version`), detects the latest SDK release, verifies the matching agent-server
-image is published in GHCR, updates all four references, and opens a
-`bump-agent-server-X.Y.Z` PR. Because the PR triggers CI + integration tests
-against the new image, merging it means the client has been validated against
-that server version. This is independent of the npm package version — bumping
-the tracked server does **not** cut a client release.
+Bumps are pushed **from the SDK side**: when `software-agent-sdk` publishes a
+new release, its release automation opens a `bump-agent-server-X.Y.Z` PR here
+that updates all four references (once the matching agent-server image is
+published to GHCR). That PR's CI + integration tests run against the new image,
+so merging it means the client has been validated against that server version.
+This is independent of the npm package version — bumping the tracked server does
+**not** cut a client release.
 
 ## Local Setup and Validation
 

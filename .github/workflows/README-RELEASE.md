@@ -108,14 +108,14 @@ To add another exact-pinned consumer later, extend `version-bump-prs.yml`.
 
 ## Tracking the upstream agent-server / SDK version
 
-Separate from cutting a release, `bump-agent-server-version.yml` keeps the
-pinned `software-agent-sdk` / agent-server image (`config.agentServerImage` in
-`package.json`, plus the `integration-tests.yml`, `AGENTS.md`, and `README.md`
-mirrors) up to date. It runs weekly (and on manual dispatch with an optional
-`version`), detects the latest SDK release, verifies the agent-server image is
-published in GHCR, and opens a `bump-agent-server-X.Y.Z` PR whose CI +
-integration tests validate the client against the new server. This is
-independent of the npm package version and does not publish anything.
+Separate from cutting a release, the pinned `software-agent-sdk` / agent-server
+image (`config.agentServerImage` in `package.json`, plus the
+`integration-tests.yml`, `AGENTS.md`, and `README.md` mirrors) is kept current
+by the **SDK's own release automation**: when `software-agent-sdk` publishes a
+new release, it opens a `bump-agent-server-X.Y.Z` PR here (once the matching
+agent-server image is published to GHCR). That PR's CI + integration tests
+validate the client against the new server. This is independent of the npm
+package version and publishes nothing.
 
 ## Workflow Files
 
@@ -124,5 +124,4 @@ independent of the npm package version and does not publish anything.
 - `.github/workflows/npm-publish.yml`
 - `.github/workflows/release.yml`
 - `.github/workflows/version-bump-prs.yml`
-- `.github/workflows/bump-agent-server-version.yml` (track upstream SDK/agent-server)
 - `.github/workflows/publish-github-packages.yml` (manual recovery)
