@@ -24,6 +24,7 @@ import {
   LLMMetadataClient,
   MCPClient,
   MetaProfilesClient,
+  PluginsClient,
   ProfilesClient,
   SecurityClient,
   ServerClient,
@@ -538,6 +539,38 @@ describe('Auxiliary API clients', () => {
 
     expect(global.fetch).toHaveBeenCalledWith(
       'http://example.com/api/skills/installed/my%20skill',
+      expect.objectContaining({ method: 'GET' })
+    );
+  });
+
+  it('PluginsClient.getPluginsMarketplace fetches the plugins marketplace', async () => {
+    const payload = {
+      plugins: [
+        {
+          name: 'city-weather',
+          description: 'Weather plugin',
+          source: 'github:OpenHands/extensions',
+          ref: null,
+          repo_path: 'plugins/city-weather',
+          installed: false,
+        },
+      ],
+    };
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const client = new PluginsClient({ host: 'http://example.com' });
+    const result = await client.getPluginsMarketplace();
+
+    expect(result.plugins).toHaveLength(1);
+    expect(result.plugins[0].installed).toBe(false);
+    expect(result.plugins[0].repo_path).toBe('plugins/city-weather');
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/plugins/marketplace',
       expect.objectContaining({ method: 'GET' })
     );
   });

@@ -317,6 +317,8 @@ export type {
   RefreshSkillResponse,
   MarketplaceSkill,
   MarketplaceResponse,
+  MarketplacePlugin,
+  MarketplaceCatalogResponse,
   DesktopUrlResponse,
   VSCodeUrlResponse,
   VSCodeStatusResponse,
