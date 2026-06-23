@@ -1,17 +1,19 @@
 name: Publish to npm
 
 on:
-  push:
-    tags:
-      - 'v*'
-  # Manual re-publish for an already-pushed tag (e.g. when a prior run failed
-  # before the publish step). Publishes the given version from the default
-  # branch — the published tarball excludes .github/, so it is identical to the
-  # tag's package contents.
+  # Primary trigger: dispatched by create-release.yml against the new tag when
+  # a rel-X.Y.Z PR is merged. Also fires if a release is published directly in
+  # the GitHub UI.
+  release:
+    types: [published]
+  # Manual re-publish for an already-released version (e.g. when a prior run
+  # failed before the publish step). Publishes the given version from the
+  # default branch — the published tarball excludes .github/, so it is
+  # identical to the tag's package contents.
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to publish to npmjs.org (no leading "v"), e.g. 1.24.0'
+        description: 'Version to publish to npmjs.org (no leading "v"), e.g. 1.25.0'
         required: true
 
 concurrency:
@@ -21,12 +23,19 @@ concurrency:
 permissions:
   contents: read
   id-token: write
+  # Needed to dispatch version-bump-prs.yml after a successful publish.
+  actions: write
 
 jobs:
   publish:
     name: Publish to npm
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Skip npm publishing for pre-releases (e.g. release candidates). A manual
+    # workflow_dispatch always runs.
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      !github.event.release.prerelease
 
     steps:
       - name: Check out repository
@@ -106,3 +115,18 @@ jobs:
 
       - name: Publish to npm with provenance
         run: npm publish --access public --provenance --tag latest
+
+      # Open downstream version-bump PRs only after the package is live on npm.
+      - name: Dispatch version bump workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TARGET_VERSION="${{ github.event.inputs.version }}"
+          else
+            TARGET_VERSION="${GITHUB_REF#refs/tags/v}"
+          fi
+          gh workflow run version-bump-prs.yml \
+            --repo "${{ github.repository }}" \
+            -f "version=${TARGET_VERSION}"
+          echo "🚀 Dispatched version-bump-prs.yml for v${TARGET_VERSION}"

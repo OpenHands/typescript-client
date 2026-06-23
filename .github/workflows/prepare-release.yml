@@ -1,0 +1,142 @@
+name: Prepare Release
+
+# Manually triggered first step of the release process. Opens a `rel-X.Y.Z`
+# PR that bumps the package version. When that PR is merged, create-release.yml
+# cuts the GitHub release and triggers publishing. Mirrors the
+# software-agent-sdk release flow, adapted for an npm package.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.25.0)'
+        required: true
+        type: string
+
+jobs:
+  prepare-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate version format
+        env:
+          INPUTS_VERSION: ${{ inputs.version }}
+        run: |
+          if ! [[ "$INPUTS_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Invalid version format. Expected: X.Y.Z (e.g., 1.25.0)"
+            exit 1
+          fi
+          echo "✅ Version format is valid: $INPUTS_VERSION"
+
+      # Use a PAT (not GITHUB_TOKEN) so the resulting PR triggers CI and
+      # integration-tests. PRs opened by GITHUB_TOKEN do not start other
+      # workflow runs.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.OPENHANDS_BOT_GITHUB_PAT_PUBLIC }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create release branch
+        env:
+          INPUTS_VERSION: ${{ inputs.version }}
+        run: |
+          BRANCH_NAME="rel-$INPUTS_VERSION"
+          echo "Creating branch: $BRANCH_NAME"
+          git checkout -b "$BRANCH_NAME"
+          echo "BRANCH_NAME=$BRANCH_NAME" >> "$GITHUB_ENV"
+
+      # Updates the version in package.json and package-lock.json without
+      # creating a git tag (the tag is created later by create-release.yml).
+      - name: Set package version
+        env:
+          INPUTS_VERSION: ${{ inputs.version }}
+        run: |
+          echo "🔧 Setting version to $INPUTS_VERSION"
+          npm version "$INPUTS_VERSION" --no-git-tag-version
+
+      - name: Commit version changes
+        env:
+          INPUTS_VERSION: ${{ inputs.version }}
+        run: |
+          git add package.json package-lock.json
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Release v$INPUTS_VERSION"
+            echo "✅ Changes committed"
+          fi
+
+      - name: Push release branch
+        run: |
+          git push -u origin "$BRANCH_NAME"
+          echo "✅ Branch pushed: $BRANCH_NAME"
+
+      - name: Create Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.OPENHANDS_BOT_GITHUB_PAT_PUBLIC }}
+          INPUTS_VERSION: ${{ inputs.version }}
+        run: |
+          python3 << 'PY'
+          import os
+          from pathlib import Path
+
+          version = os.environ["INPUTS_VERSION"]
+          Path("pr_body.txt").write_text(
+              f"""## Release v{version}
+
+          This PR prepares the release for version **{version}**.
+
+          ### Release Checklist
+          - [x] Version set to {version}
+          - [ ] CI passes
+          - [ ] Integration tests pass
+          - [ ] Confirm any `release-note-required` PRs are accurately called out in the final release notes
+
+          ### What happens on merge
+          When this PR is merged, the `create-release.yml` workflow will automatically:
+          1. Create a GitHub release with tag `v{version}` and auto-generated notes, plus an explicit preamble for merged `release-note-required` PRs
+          2. Trigger `npm-publish.yml` to publish to npmjs.org (with provenance)
+          3. Trigger `release.yml` to publish to GitHub Packages
+          4. Trigger `version-bump-prs.yml` to open the downstream version bump PR (agent-canvas)
+          """
+          )
+          PY
+
+          gh pr create \
+            --title "Release v$INPUTS_VERSION" \
+            --body-file pr_body.txt \
+            --base main \
+            --head "$BRANCH_NAME"
+
+          rm pr_body.txt
+          echo "✅ Pull request created successfully!"
+
+          PR_URL=$(gh pr view "$BRANCH_NAME" --json url --jq '.url')
+          echo "🔗 PR URL: $PR_URL"
+          echo "PR_URL=$PR_URL" >> "$GITHUB_ENV"
+
+      - name: Summary
+        env:
+          INPUTS_VERSION: ${{ inputs.version }}
+        run: |
+          {
+            echo "## ✅ Release Preparation Complete!"
+            echo ""
+            echo "- **Version**: $INPUTS_VERSION"
+            echo "- **Branch**: ${{ env.BRANCH_NAME }}"
+            echo "- **PR URL**: ${{ env.PR_URL }}"
+            echo ""
+            echo "### Next Steps:"
+            echo "1. Review the PR and wait for CI + integration tests to pass"
+            echo "2. Merge the PR — a GitHub release and npm/GitHub Packages publish will happen automatically"
+          } >> "$GITHUB_STEP_SUMMARY"

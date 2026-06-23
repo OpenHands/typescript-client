@@ -259,6 +259,51 @@ src/hooks/
 3. **Testing**: All functionality should be tested against a running OpenHands Agent Server instance
 4. **Documentation**: API changes should be reflected in the README.md and example code
 
+## Release Process
+
+Releases are **merge-driven** and automated, mirroring the
+[software-agent-sdk](https://github.com/OpenHands/software-agent-sdk) flow
+adapted for an npm package. Nobody pushes `vX.Y.Z` tags or drafts GitHub
+releases by hand. The full reference lives in
+[`.github/workflows/README-RELEASE.md`](.github/workflows/README-RELEASE.md);
+the summary:
+
+```
+Prepare Release (manual dispatch) ─▶ rel-X.Y.Z PR ─(merge)─▶ create-release.yml ─┬─▶ npm-publish.yml ─▶ version-bump-prs.yml
+                                        (CI + integration)     (GitHub Release)    └─▶ release.yml (GitHub Packages)
+```
+
+1. **Prepare Release** (`prepare-release.yml`, manual `workflow_dispatch` with a
+   `X.Y.Z` version): creates a `rel-X.Y.Z` branch, bumps the version with
+   `npm version <version> --no-git-tag-version` (updates `package.json` and
+   `package-lock.json`), and opens a PR with a release checklist. It uses the
+   `OPENHANDS_BOT_GITHUB_PAT_PUBLIC` PAT so the PR triggers CI + integration
+   tests (a PR opened by `GITHUB_TOKEN` would not).
+2. **Review + merge the PR.** `ci.yml` and `integration-tests.yml` run
+   automatically on it; no labels are required.
+3. **Create Release** (`create-release.yml`, on merge of any `rel-*` PR):
+   creates the GitHub release `vX.Y.Z` with auto-generated notes plus a preamble
+   listing merged `release-note-required` PRs, then explicitly dispatches the
+   publish workflows (releases created by `GITHUB_TOKEN` do not auto-trigger
+   them).
+4. **Publish**: `npm-publish.yml` publishes to **npmjs.org** (OIDC trusted
+   publishing, with provenance) and then dispatches the version bump;
+   `release.yml` publishes to **GitHub Packages**. Both trigger on
+   `release: published` (and `workflow_dispatch` for manual recovery) and skip
+   pre-releases.
+5. **Downstream bump** (`version-bump-prs.yml`): waits for the version to be
+   resolvable on npm, then opens a bump PR in **`agent-canvas`** — the only
+   consumer that pins an exact version. Other consumers float (`"*"`), track
+   `git+https`, or only reference a tsconfig path alias, so they are not bumped.
+
+**To cut a release:** Actions tab → **Prepare Release** → enter `X.Y.Z` → review
+and merge the PR. Everything after merge is automatic.
+
+**Prerequisite:** the `OPENHANDS_BOT_GITHUB_PAT_PUBLIC` secret (classic PAT with
+`repo` + `workflow` scope) must be available to the repo (it may be inherited
+from an org-level secret). Without it, `prepare-release.yml` and
+`version-bump-prs.yml` cannot open PRs.
+
 ## Local Setup and Validation
 
 Use the same bootstrap command as CI and `.openhands/setup.sh`:

@@ -4,34 +4,39 @@ This document explains how to publish the OpenHands TypeScript Client.
 
 ## Overview
 
-The package is published to **two registries** on every version tag:
+Releases are **merge-driven**: you trigger **Prepare Release**, merge the
+resulting `rel-X.Y.Z` PR, and the rest is automated. The package is published to
+**two registries**:
 
 | Registry | Workflow | Auth |
 |----------|----------|------|
 | **npm** (`registry.npmjs.org`) | `.github/workflows/npm-publish.yml` | OIDC trusted publishing |
 | **GitHub Packages** (`npm.pkg.github.com`) | `.github/workflows/release.yml` | `GITHUB_TOKEN` |
 
+The full process, prerequisites, and downstream version-bump behavior are
+documented in [`.github/workflows/README-RELEASE.md`](.github/workflows/README-RELEASE.md).
+
 ## Automated Publishing (Recommended)
 
 ### Prerequisites
 
 - **npm trusted publishing**: The `@openhands/typescript-client` package on npmjs.org must have the `OpenHands/typescript-client` repository configured as a trusted publisher (see [npm docs](https://docs.npmjs.com/trusted-publishers/)).
+- **`OPENHANDS_BOT_GITHUB_PAT_PUBLIC`**: A classic PAT (with `repo` + `workflow` scope) so the release PR triggers CI and so the downstream bump PR can be opened in `agent-canvas`.
 - **GitHub Token**: Automatically provided by GitHub Actions as `GITHUB_TOKEN` for GitHub Packages.
 
 ### Publishing Process
 
-1. **Create and push a version tag**:
+1. **Trigger Prepare Release**: Actions tab → **Prepare Release** → **Run workflow** → enter the version (e.g. `1.25.0`). This opens a `rel-X.Y.Z` PR that bumps the version.
 
-   ```bash
-   git tag v1.23.3
-   git push origin v1.23.3
-   ```
+2. **Review and merge the PR**. CI and integration tests run automatically.
 
-2. **Two GitHub Actions run automatically**:
-   - `npm-publish.yml`: Tests → builds → publishes to **npm** with provenance
-   - `release.yml`: Tests → builds → publishes to **GitHub Packages** → creates a GitHub Release
+3. **On merge, the automation runs**:
+   - `create-release.yml`: creates the GitHub Release `vX.Y.Z` (auto notes + `release-note-required` preamble) and dispatches the two publish workflows.
+   - `npm-publish.yml`: publishes to **npm** with provenance, then dispatches the version bump.
+   - `release.yml`: publishes to **GitHub Packages**.
+   - `version-bump-prs.yml`: opens a bump PR in `agent-canvas` once the version is live on npm.
 
-Only these two workflows should run on version tags. The manual publish workflow (`.github/workflows/publish-github-packages.yml`) is for explicit `workflow_dispatch` recovery only and must not also run on tag pushes, otherwise it can race the release workflow and fail with a duplicate-version conflict.
+The manual publish workflow (`.github/workflows/publish-github-packages.yml`) is for explicit `workflow_dispatch` recovery only.
 
 ## Manual Publishing
 
