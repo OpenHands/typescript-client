@@ -17,6 +17,9 @@ on:
 jobs:
   create-version-bump-prs:
     runs-on: ubuntu-latest
+    # Bounds the npm-availability polling loop (up to 60 × 20s = 20 min) so a
+    # stuck run cannot hold a runner slot for the 6-hour default.
+    timeout-minutes: 30
     env:
       GH_TOKEN: ${{ secrets.OPENHANDS_BOT_GITHUB_TYPESCRIPT_CLIENT }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
