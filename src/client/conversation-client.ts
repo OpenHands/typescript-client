@@ -157,7 +157,7 @@ export class ConversationClient {
   ): Promise<Array<ConversationEvent | null>> {
     const response = await this.client.get<(ConversationEvent | null)[]>(
       `/api/conversations/${conversationId}/events`,
-      { params: { event_ids: eventIds } }
+      { data: eventIds }
     );
     return response.data;
   }

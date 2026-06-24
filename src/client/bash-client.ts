@@ -66,7 +66,7 @@ export class BashClient {
    */
   async batchGetEvents(eventIds: string[]): Promise<Array<BashEvent | null>> {
     const response = await this.client.get<(BashEvent | null)[]>('/api/bash/bash_events/', {
-      params: { event_ids: eventIds },
+      data: eventIds,
     });
     return response.data;
   }
