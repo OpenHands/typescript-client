@@ -261,48 +261,55 @@ src/hooks/
 
 ## Release Process
 
-Releases are **merge-driven** and automated, mirroring the
-[software-agent-sdk](https://github.com/OpenHands/software-agent-sdk) flow
-adapted for an npm package. Nobody pushes `vX.Y.Z` tags or drafts GitHub
-releases by hand. The full reference lives in
+Releases are driven by
+[release-please](https://github.com/googleapis/release-please) via OpenHands'
+centralized reusable workflows in
+[`OpenHands/release-actions`](https://github.com/OpenHands/release-actions). The
+version is **derived from Conventional-Commit PR titles** — nobody picks a
+version, pushes `vX.Y.Z` tags, or drafts GitHub releases by hand. The full
+reference lives in
 [`.github/workflows/README-RELEASE.md`](.github/workflows/README-RELEASE.md);
 the summary:
 
 ```
-Prepare Release (manual dispatch) ─▶ rel-X.Y.Z PR ─(merge)─▶ create-release.yml ─┬─▶ npm-publish.yml ─▶ version-bump-prs.yml
-                                        (CI + integration)     (GitHub Release)    └─▶ release.yml (GitHub Packages)
+PR (conventional title) ─▶ pr.yml (lint + type: label)
+        │ merge
+push to main ─▶ release.yml (release-please) ─▶ "release PR" ─(merge)─▶ Release + tag vX.Y.Z
+                                                                              │ release: published
+                                                              ┌───────────────┴───────────────┐
+                                                       npm-publish.yml          publish-github-packages.yml
+                                                       (npmjs.org)              (GitHub Packages)
 ```
 
-1. **Prepare Release** (`prepare-release.yml`, manual `workflow_dispatch` with a
-   `X.Y.Z` version): creates a `rel-X.Y.Z` branch, bumps the version with
-   `npm version <version> --no-git-tag-version` (updates `package.json` and
-   `package-lock.json`), and opens a PR with a release checklist. It uses the
-   `OPENHANDS_BOT_GITHUB_TYPESCRIPT_CLIENT` PAT so the PR triggers CI + integration
-   tests (a PR opened by `GITHUB_TOKEN` would not).
-2. **Review + merge the PR.** `ci.yml` and `integration-tests.yml` run
-   automatically on it; no labels are required.
-3. **Create Release** (`create-release.yml`, on merge of any `rel-*` PR):
-   creates the GitHub release `vX.Y.Z` with auto-generated notes plus a preamble
-   listing merged `release-note-required` PRs, then explicitly dispatches the
-   publish workflows (releases created by `GITHUB_TOKEN` do not auto-trigger
-   them).
-4. **Publish**: `npm-publish.yml` publishes to **npmjs.org** (OIDC trusted
-   publishing, with provenance) and then dispatches the version bump;
-   `release.yml` publishes to **GitHub Packages**. Both trigger on
-   `release: published` (and `workflow_dispatch` for manual recovery) and skip
-   pre-releases.
-5. **Downstream bump** (`version-bump-prs.yml`): waits for the version to be
-   resolvable on npm, then opens a bump PR in **`agent-canvas`** — the only
-   consumer that pins an exact version. Other consumers float (`"*"`), track
-   `git+https`, or only reference a tsconfig path alias, so they are not bumped.
+1. **PR titles** (`pr.yml` → `release-actions/.github/workflows/pr-title.yml@main`):
+   every PR title is linted for Conventional Commits (`feat:`, `fix:`, …) and
+   labeled `type: <type>`. `fix:` → patch, `feat:` → minor, `feat!:` /
+   `BREAKING CHANGE` → major.
+2. **release-please** (`release.yml` → `release-actions/.github/workflows/release-please.yml@main`,
+   on push to `main`): keeps a **release PR** open that derives the next version
+   from the merged PR titles and bumps `package.json` + `package-lock.json`.
+   Merging it creates the GitHub Release `vX.Y.Z` (notes grouped by the `type:`
+   labels via `.github/release.yml`). It authors the PR, tag, and release with
+   the org release **App token** so the `release: published` event actually
+   fires the publish jobs.
+3. **Publish** (on `release: published`, skipping pre-releases): `npm-publish.yml`
+   publishes to **npmjs.org** (OIDC trusted publishing, with provenance) and
+   `publish-github-packages.yml` publishes to **GitHub Packages**. Both also
+   accept a `workflow_dispatch` `version` input for manual recovery.
 
-**To cut a release:** Actions tab → **Prepare Release** → enter `X.Y.Z` → review
-and merge the PR. Everything after merge is automatic.
+State lives in `release-please-config.json` (`release-type: node`,
+`include-component-in-tag: false` → `vX.Y.Z` tags), `.release-please-manifest.json`
+(last released version), and `.github/release.yml` (notes categories).
 
-**Prerequisite:** the `OPENHANDS_BOT_GITHUB_TYPESCRIPT_CLIENT` secret (classic PAT with
-`repo` + `workflow` scope) must be available to the repo (it may be inherited
-from an org-level secret). Without it, `prepare-release.yml` and
-`version-bump-prs.yml` cannot open PRs.
+**To cut a release:** merge PRs with conventional titles as usual, then merge the
+`chore(main): release X.Y.Z` PR that release-please maintains. Everything after
+that is automatic.
+
+**Prerequisites:** the org-level `RELEASE_APP_ID` / `RELEASE_APP_PRIVATE_KEY`
+secrets (inherited org-wide — nothing to create) and the one-time squash-merge
+setting (`squash_merge_commit_title=PR_TITLE`) so release-please reads the PR
+title as the commit. See README-RELEASE.md for the exact `gh api` command.
+Downstream consumers (e.g. `agent-canvas`) are **not** bumped automatically.
 
 ### Tracking the agent-server / SDK version
 

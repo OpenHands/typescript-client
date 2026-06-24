@@ -1,9 +1,10 @@
 name: Publish to npm
 
 on:
-  # Primary trigger: dispatched by create-release.yml against the new tag when
-  # a rel-X.Y.Z PR is merged. Also fires if a release is published directly in
-  # the GitHub UI.
+  # Primary trigger: a published GitHub Release. release-please (see release.yml)
+  # creates the release with a GitHub App token, so this `release: published`
+  # event IS delivered — it would be suppressed for a release created by the
+  # default GITHUB_TOKEN.
   release:
     types: [published]
   # Manual re-publish for an already-released version (e.g. when a prior run
@@ -23,8 +24,6 @@ concurrency:
 permissions:
   contents: read
   id-token: write
-  # Needed to dispatch version-bump-prs.yml after a successful publish.
-  actions: write
 
 jobs:
   publish:
@@ -122,18 +121,3 @@ jobs:
 
       - name: Publish to npm with provenance
         run: npm publish --access public --provenance --tag latest
-
-      # Open downstream version-bump PRs only after the package is live on npm.
-      - name: Dispatch version bump workflow
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TARGET_VERSION="${{ github.event.inputs.version }}"
-          else
-            TARGET_VERSION="${GITHUB_REF#refs/tags/v}"
-          fi
-          gh workflow run version-bump-prs.yml \
-            --repo "${{ github.repository }}" \
-            -f "version=${TARGET_VERSION}"
-          echo "🚀 Dispatched version-bump-prs.yml for v${TARGET_VERSION}"

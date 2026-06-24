@@ -1,79 +1,38 @@
-name: Release
+name: release
 
-# Publishes the package to GitHub Packages. The GitHub Release itself is now
-# created by create-release.yml when a rel-X.Y.Z PR is merged; this workflow is
-# dispatched by create-release.yml (and also runs if a release is published in
-# the UI). For npmjs.org publishing see npm-publish.yml.
-
+# Release automation via release-please, using OpenHands' centralized reusable
+# workflows (OpenHands/release-actions). This thin caller owns the trigger; the
+# reusable workflow owns the logic.
+#
+# On every push to main (or a release/** maintenance branch), release-please
+# maintains a "release PR" that, when merged, derives the next SemVer version
+# from the Conventional-Commit PR titles merged since the last release, bumps
+# package.json + package-lock.json, and creates the GitHub Release + tag
+# (vX.Y.Z). That published release then drives the publish workflows
+# (npm-publish.yml, publish-github-packages.yml) via their `release: published`
+# triggers.
+#
+# Config lives in release-please-config.json + .release-please-manifest.json,
+# and the release-notes grouping in .github/release.yml.
 on:
-  # Primary trigger: dispatched by create-release.yml against the new tag.
-  # Also fires if a release is published directly in the GitHub UI.
-  release:
-    types: [published]
-  # Manual re-publish for an already-released version.
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to publish to GitHub Packages (no leading "v"), e.g. 1.25.0'
-        required: true
-
-permissions:
-  contents: read
-  packages: write
+  push:
+    branches:
+      - main
+      # Maintenance/freeze branches (e.g. release/0.x). The reusable workflow
+      # scopes the release to whichever branch triggered this run.
+      - 'release/**'
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
-    # Skip publishing for pre-releases. A manual workflow_dispatch always runs.
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      !github.event.release.prerelease
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js for GitHub Packages
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20.x
-        cache: 'npm'
-        registry-url: 'https://npm.pkg.github.com'
-        scope: '@openhands'
-
-    - name: Install dependencies
-      run: npm ci
-
-    - name: Run tests
-      run: npm test
-
-    - name: Extract and set version
-      run: |
-        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-          TARGET_VERSION="${{ github.event.inputs.version }}"
-        else
-          TARGET_VERSION="${GITHUB_REF#refs/tags/v}"
-        fi
-
-        CURRENT_VERSION=$(node -p "require('./package.json').version")
-        echo "Publishing version: $TARGET_VERSION (current package.json: $CURRENT_VERSION)"
-        if [ "$CURRENT_VERSION" = "$TARGET_VERSION" ]; then
-          echo "package.json already matches target version; skipping npm version"
-        else
-          npm version "$TARGET_VERSION" --no-git-tag-version
-        fi
-
-        PACKAGE_VERSION=$(node -p "require('./package.json').version")
-        if [ "$PACKAGE_VERSION" != "$TARGET_VERSION" ]; then
-          echo "Error: package.json version ($PACKAGE_VERSION) doesn't match target ($TARGET_VERSION)"
-          exit 1
-        fi
-        echo "✓ Version $PACKAGE_VERSION matches target"
-
-    - name: Build package
-      run: npm run build
-
-    - name: Publish to GitHub Packages
-      run: npm publish --access public
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  release-please:
+    # The caller must grant the permissions the reusable workflow needs; the
+    # effective token is the intersection of the two.
+    permissions:
+      contents: write
+      pull-requests: write
+    # Passes the org-level RELEASE_APP_ID / RELEASE_APP_PRIVATE_KEY through so the
+    # reusable workflow can mint a GitHub App token. This is required, not an
+    # optimization: a release created by the default GITHUB_TOKEN would NOT
+    # trigger the `release: published` publish jobs (GitHub's recursion guard),
+    # so the App-token identity is what lets npm + GitHub Packages publishing fire.
+    secrets: inherit
+    uses: OpenHands/release-actions/.github/workflows/release-please.yml@main
