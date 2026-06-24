@@ -27,7 +27,7 @@ prepare-release.yml ──▶ rel-X.Y.Z PR ──(merge)──▶ create-release
 
 ## Prerequisites (one-time)
 
-- **`OPENHANDS_BOT_GITHUB_PAT_PUBLIC`** secret — a classic PAT (with `repo` and
+- **`OPENHANDS_BOT_GITHUB_TYPESCRIPT_CLIENT`** secret — a classic PAT (with `repo` and
   `workflow` scope) used by:
   - `prepare-release.yml`, so the release PR triggers CI + integration tests
     (PRs opened by `GITHUB_TOKEN` do not start other workflow runs), and
@@ -99,7 +99,7 @@ To add another exact-pinned consumer later, extend `version-bump-prs.yml`.
 ## Troubleshooting
 
 - **Version format error** — use `X.Y.Z`, not `vX.Y.Z`.
-- **PR not triggering CI** — confirm `OPENHANDS_BOT_GITHUB_PAT_PUBLIC` is set and
+- **PR not triggering CI** — confirm `OPENHANDS_BOT_GITHUB_TYPESCRIPT_CLIENT` is set and
   not expired.
 - **npm publish failed** — confirm trusted publishing is configured and the
   version does not already exist on npm.

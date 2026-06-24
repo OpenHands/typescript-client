@@ -33,7 +33,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.OPENHANDS_BOT_GITHUB_PAT_PUBLIC }}
+          token: ${{ secrets.OPENHANDS_BOT_GITHUB_TYPESCRIPT_CLIENT }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -83,7 +83,7 @@ jobs:
 
       - name: Create Pull Request
         env:
-          GH_TOKEN: ${{ secrets.OPENHANDS_BOT_GITHUB_PAT_PUBLIC }}
+          GH_TOKEN: ${{ secrets.OPENHANDS_BOT_GITHUB_TYPESCRIPT_CLIENT }}
           INPUTS_VERSION: ${{ inputs.version }}
         run: |
           python3 << 'PY'

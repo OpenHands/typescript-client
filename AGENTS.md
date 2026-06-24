@@ -277,7 +277,7 @@ Prepare Release (manual dispatch) ─▶ rel-X.Y.Z PR ─(merge)─▶ create-re
    `X.Y.Z` version): creates a `rel-X.Y.Z` branch, bumps the version with
    `npm version <version> --no-git-tag-version` (updates `package.json` and
    `package-lock.json`), and opens a PR with a release checklist. It uses the
-   `OPENHANDS_BOT_GITHUB_PAT_PUBLIC` PAT so the PR triggers CI + integration
+   `OPENHANDS_BOT_GITHUB_TYPESCRIPT_CLIENT` PAT so the PR triggers CI + integration
    tests (a PR opened by `GITHUB_TOKEN` would not).
 2. **Review + merge the PR.** `ci.yml` and `integration-tests.yml` run
    automatically on it; no labels are required.
@@ -299,7 +299,7 @@ Prepare Release (manual dispatch) ─▶ rel-X.Y.Z PR ─(merge)─▶ create-re
 **To cut a release:** Actions tab → **Prepare Release** → enter `X.Y.Z` → review
 and merge the PR. Everything after merge is automatic.
 
-**Prerequisite:** the `OPENHANDS_BOT_GITHUB_PAT_PUBLIC` secret (classic PAT with
+**Prerequisite:** the `OPENHANDS_BOT_GITHUB_TYPESCRIPT_CLIENT` secret (classic PAT with
 `repo` + `workflow` scope) must be available to the repo (it may be inherited
 from an org-level secret). Without it, `prepare-release.yml` and
 `version-bump-prs.yml` cannot open PRs.

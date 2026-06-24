@@ -21,7 +21,7 @@ documented in [`.github/workflows/README-RELEASE.md`](.github/workflows/README-R
 ### Prerequisites
 
 - **npm trusted publishing**: The `@openhands/typescript-client` package on npmjs.org must have the `OpenHands/typescript-client` repository configured as a trusted publisher (see [npm docs](https://docs.npmjs.com/trusted-publishers/)).
-- **`OPENHANDS_BOT_GITHUB_PAT_PUBLIC`**: A classic PAT (with `repo` + `workflow` scope) so the release PR triggers CI and so the downstream bump PR can be opened in `agent-canvas`.
+- **`OPENHANDS_BOT_GITHUB_TYPESCRIPT_CLIENT`**: A classic PAT (with `repo` + `workflow` scope) so the release PR triggers CI and so the downstream bump PR can be opened in `agent-canvas`.
 - **GitHub Token**: Automatically provided by GitHub Actions as `GITHUB_TOKEN` for GitHub Packages.
 
 ### Publishing Process
