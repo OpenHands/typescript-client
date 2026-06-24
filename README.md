@@ -223,7 +223,6 @@ Factory function that creates conversations with OpenHands agents.
 - `pause()` - Pause agent execution
 - `setConfirmationPolicy(policy)` - Set confirmation policy
 - `sendConfirmationResponse(accept, reason?)` - Respond to confirmation requests
-- `generateTitle(maxLength?, llm?)` - Generate a title for the conversation
 - `updateSecrets(secrets)` - Update conversation secrets
 - `startWebSocketClient()` - Start real-time event streaming
 - `stopWebSocketClient()` - Stop real-time event streaming
@@ -377,14 +376,14 @@ Integration tests require a running agent-server in Docker with a mounted worksp
    chmod 777 /tmp/agent-workspace
    ```
 
-2. Start the agent-server container (software-agent-sdk v1.24.0):
+2. Start the agent-server container (software-agent-sdk v1.29.0):
 
    ```bash
    docker run -d \
      --name agent-server \
      -p 8010:8000 \
      -v /tmp/agent-workspace:/workspace \
-     ghcr.io/openhands/agent-server:1.24.0-python
+     ghcr.io/openhands/agent-server:1.29.0-python
    ```
 
 3. Wait for the server to be ready:
