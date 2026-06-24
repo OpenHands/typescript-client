@@ -12,7 +12,6 @@ import {
 import {
   AgentProfilesClient,
   AgentServerVersionError,
-  ApiKeysClient,
   BashClient,
   clearAgentServerInfoCache,
   CloudProxyClient,
@@ -26,9 +25,7 @@ import {
   MetaProfilesClient,
   PluginsClient,
   ProfilesClient,
-  SecurityClient,
   ServerClient,
-  SessionClient,
   SettingsClient,
   SharedClient,
   SkillsClient,
@@ -62,9 +59,6 @@ describe('Auxiliary API clients', () => {
     expect(manager.metaProfiles.apiKey).toBe('secret');
     expect(manager.files).toBeInstanceOf(FileClient);
     expect(manager.workspaces).toBeInstanceOf(WorkspacesClient);
-    expect(manager.security).toBeInstanceOf(SecurityClient);
-    expect(manager.apiKeys).toBeInstanceOf(ApiKeysClient);
-    expect(manager.session).toBeInstanceOf(SessionClient);
     expect(manager.shared).toBeInstanceOf(SharedClient);
     expect(manager.hooks).toBeInstanceOf(HooksClient);
     expect(manager.mcp).toBeInstanceOf(MCPClient);
@@ -1128,6 +1122,98 @@ describe('Auxiliary API clients', () => {
     );
   });
 
+  it('RemoteConversation.startGoal includes max_iterations only when provided and surfaces HttpError 409', async () => {
+    const agent = new Agent({ llm: { model: 'gpt-4o', api_key: 'k' } });
+    const workspace = new RemoteWorkspace({ host: 'http://example.com', workingDir: '/tmp' });
+    const conversation = new RemoteConversation(agent, workspace, {
+      conversationId: 'conv-123',
+    });
+
+    // Omitted maxIterations must not appear on the wire (server default applies).
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+    await conversation.startGoal('Fix the failing test');
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/conversations/conv-123/goal',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ objective: 'Fix the failing test' }),
+      })
+    );
+
+    // A 409 from the server (run/goal already active) must propagate as HttpError,
+    // and maxIterations must be forwarded when supplied.
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ detail: 'Conversation run or goal loop already running.' }), {
+        status: 409,
+        statusText: 'Conflict',
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+    const error = await conversation.startGoal('Fix the failing test', 5).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(HttpError);
+    expect((error as HttpError).status).toBe(409);
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/conversations/conv-123/goal',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ objective: 'Fix the failing test', max_iterations: 5 }),
+      })
+    );
+  });
+
+  it('RemoteConversation.resumeGoal POSTs to goal/resume and surfaces HttpError 400 when nothing is resumable', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ detail: 'no_resumable_goal' }), {
+        status: 400,
+        statusText: 'Bad Request',
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const agent = new Agent({ llm: { model: 'gpt-4o', api_key: 'k' } });
+    const workspace = new RemoteWorkspace({ host: 'http://example.com', workingDir: '/tmp' });
+    const conversation = new RemoteConversation(agent, workspace, {
+      conversationId: 'conv-123',
+    });
+
+    const error = await conversation.resumeGoal().catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(HttpError);
+    expect((error as HttpError).status).toBe(400);
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/conversations/conv-123/goal/resume',
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({}) })
+    );
+  });
+
+  it('RemoteConversation.stopGoal POSTs to goal/stop and surfaces HttpError 404 for a missing conversation', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ detail: 'Item not found' }), {
+        status: 404,
+        statusText: 'Not Found',
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const agent = new Agent({ llm: { model: 'gpt-4o', api_key: 'k' } });
+    const workspace = new RemoteWorkspace({ host: 'http://example.com', workingDir: '/tmp' });
+    const conversation = new RemoteConversation(agent, workspace, {
+      conversationId: 'conv-123',
+    });
+
+    const error = await conversation.stopGoal().catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(HttpError);
+    expect((error as HttpError).status).toBe(404);
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/conversations/conv-123/goal/stop',
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({}) })
+    );
+  });
+
   it('RemoteConversation.setConfirmationPolicy wraps the SDK v1.23.0 request body', async () => {
     global.fetch = jest.fn().mockResolvedValue(
       new Response(JSON.stringify({ success: true }), {
@@ -1200,7 +1286,7 @@ describe('Auxiliary API clients', () => {
     );
 
     expect(global.fetch).toHaveBeenCalledWith(
-      'http://example.com/api/acp/conversations',
+      'http://example.com/api/conversations',
       expect.objectContaining({
         method: 'POST',
       })
@@ -1676,6 +1762,106 @@ describe('Auxiliary API clients', () => {
     );
   });
 
+  describe('ConversationClient goal endpoints (error paths)', () => {
+    function mockErrorResponse(status: number, statusText: string, detail: string): void {
+      global.fetch = jest.fn(
+        async () =>
+          new Response(JSON.stringify({ detail }), {
+            status,
+            statusText,
+            headers: { 'content-type': 'application/json' },
+          })
+      ) as typeof fetch;
+    }
+
+    it('startGoal posts the objective and rejects with HttpError 409 when a run is already active', async () => {
+      mockErrorResponse(409, 'Conflict', 'Conversation run or goal loop already running.');
+      const client = new ConversationClient({ host: 'http://example.com' });
+
+      const error = await client
+        .startGoal('c1', { objective: 'Audit the repo', max_iterations: 3 })
+        .catch((e: unknown) => e);
+
+      expect(error).toBeInstanceOf(HttpError);
+      expect((error as HttpError).status).toBe(409);
+      // The failure must still have targeted the right route, method, and body
+      // so a 409 is attributable to server state, not a client contract bug.
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://example.com/api/conversations/c1/goal',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ objective: 'Audit the repo', max_iterations: 3 }),
+        })
+      );
+    });
+
+    it('startGoal rejects with HttpError 400 when the objective is invalid', async () => {
+      mockErrorResponse(400, 'Bad Request', 'Goal objective must not be empty.');
+      const client = new ConversationClient({ host: 'http://example.com' });
+
+      const error = await client.startGoal('c1', { objective: '' }).catch((e: unknown) => e);
+
+      expect(error).toBeInstanceOf(HttpError);
+      expect((error as HttpError).status).toBe(400);
+      // max_iterations is omitted from the wire body when not supplied so the
+      // server applies its own default.
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://example.com/api/conversations/c1/goal',
+        expect.objectContaining({ method: 'POST', body: JSON.stringify({ objective: '' }) })
+      );
+    });
+
+    it('startGoal rejects with HttpError 404 for an unknown conversation', async () => {
+      mockErrorResponse(404, 'Not Found', 'Item not found');
+      const client = new ConversationClient({ host: 'http://example.com' });
+
+      const error = await client
+        .startGoal('does-not-exist', { objective: 'Audit the repo' })
+        .catch((e: unknown) => e);
+
+      expect(error).toBeInstanceOf(HttpError);
+      expect((error as HttpError).status).toBe(404);
+    });
+
+    it('resumeGoal posts an empty body and rejects with HttpError 400 when there is no resumable goal', async () => {
+      mockErrorResponse(400, 'Bad Request', 'no_resumable_goal');
+      const client = new ConversationClient({ host: 'http://example.com' });
+
+      const error = await client.resumeGoal('c1').catch((e: unknown) => e);
+
+      expect(error).toBeInstanceOf(HttpError);
+      expect((error as HttpError).status).toBe(400);
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://example.com/api/conversations/c1/goal/resume',
+        expect.objectContaining({ method: 'POST', body: JSON.stringify({}) })
+      );
+    });
+
+    it('resumeGoal rejects with HttpError 409 when a run or goal loop is already active', async () => {
+      mockErrorResponse(409, 'Conflict', 'Conversation run or goal loop already running.');
+      const client = new ConversationClient({ host: 'http://example.com' });
+
+      const error = await client.resumeGoal('c1').catch((e: unknown) => e);
+
+      expect(error).toBeInstanceOf(HttpError);
+      expect((error as HttpError).status).toBe(409);
+    });
+
+    it('stopGoal posts an empty body and rejects with HttpError 404 for an unknown conversation', async () => {
+      mockErrorResponse(404, 'Not Found', 'Item not found');
+      const client = new ConversationClient({ host: 'http://example.com' });
+
+      const error = await client.stopGoal('does-not-exist').catch((e: unknown) => e);
+
+      expect(error).toBeInstanceOf(HttpError);
+      expect((error as HttpError).status).toBe(404);
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://example.com/api/conversations/does-not-exist/goal/stop',
+        expect.objectContaining({ method: 'POST', body: JSON.stringify({}) })
+      );
+    });
+  });
+
   it('Hooks MCP and CloudProxy clients wrap SDK v1.23.0 endpoints', async () => {
     const serverInfo = { version: '1.23.0', uptime: 1, idle_time: 0 };
     const responses = [
@@ -1777,13 +1963,8 @@ describe('Auxiliary API clients', () => {
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
-  it('Security ApiKeys Session and Shared clients wrap app endpoints', async () => {
+  it('Shared client wraps app endpoints', async () => {
     const responses = [
-      { policy: 'default' },
-      { RISK_SEVERITY: 2 },
-      [{ id: 'key-1', name: 'Key', prefix: 'oh', created_at: 'now', last_used_at: null }],
-      { id: 'key-2', name: 'New', key: 'full', prefix: 'oh', created_at: 'now' },
-      { redirect_url: '/home' },
       [{ id: 'shared-1', created_by_user_id: null, selected_repository: null }],
       { items: [], next_page_id: null },
     ];
@@ -1798,28 +1979,11 @@ describe('Auxiliary API clients', () => {
     }) as typeof fetch;
 
     const options = { host: 'http://example.com' };
-    await new SecurityClient(options).getPolicy();
-    await new SecurityClient(options).getRiskSeverity();
-    await new ApiKeysClient(options).listApiKeys();
-    await new ApiKeysClient(options).createApiKey('New');
-    await new ApiKeysClient(options).deleteApiKey('key/2');
-    await new SessionClient(options).acceptTos('/home');
-    await new SessionClient(options).unsetProviderTokens();
     await new SharedClient(options).getSharedConversation('shared-1');
     await new SharedClient(options).searchSharedEvents({ conversationId: 'shared-1', limit: 50 });
 
     expect(global.fetch).toHaveBeenNthCalledWith(
-      5,
-      'http://example.com/api/keys/key%2F2',
-      expect.objectContaining({ method: 'DELETE' })
-    );
-    expect(global.fetch).toHaveBeenNthCalledWith(
-      6,
-      'http://example.com/api/accept_tos',
-      expect.objectContaining({ method: 'POST', body: JSON.stringify({ redirect_url: '/home' }) })
-    );
-    expect(global.fetch).toHaveBeenNthCalledWith(
-      9,
+      2,
       'http://example.com/api/shared-events/search?conversation_id=shared-1&limit=50',
       expect.objectContaining({ method: 'GET' })
     );

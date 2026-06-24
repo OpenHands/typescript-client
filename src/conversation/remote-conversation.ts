@@ -24,8 +24,6 @@ import {
   SendMessageRequest,
   ConfirmationResponseRequest,
   CreateConversationRequest,
-  GenerateTitleRequest,
-  GenerateTitleResponse,
   UpdateConversationRequest,
   UpdateSecretsRequest,
   AskAgentRequest,
@@ -33,6 +31,7 @@ import {
   SetSecurityAnalyzerRequest,
   AgentResponseResult,
   ForkConversationRequest,
+  StartGoalRequest,
 } from '../models/conversation';
 import { IConversation, BaseConversationOptions } from './base';
 import { Success } from '../types/base';
@@ -254,21 +253,6 @@ export class RemoteConversation implements IConversation {
     await this.client.patch(`/api/conversations/${this.id}`, request);
   }
 
-  async generateTitle(maxLength: number = 50, llm?: LLM): Promise<string> {
-    const request: GenerateTitleRequest = { max_length: maxLength };
-    if (llm) {
-      request.llm = llm;
-    }
-
-    const response = await this.client.post<GenerateTitleResponse>(
-      `/api/conversations/${this.id}/generate_title`,
-      request
-    );
-    const title = response.data.title;
-    await this.setTitle(title);
-    return title;
-  }
-
   /**
    * Ask the agent a simple question without affecting conversation state.
    * This is useful for getting quick answers or clarifications.
@@ -319,6 +303,40 @@ export class RemoteConversation implements IConversation {
    */
   async switchAcpModel(model: string): Promise<void> {
     await this.client.post(`/api/conversations/${this.id}/switch_acp_model`, { model });
+  }
+
+  /**
+   * Start a `/goal` loop inside this conversation: the agent pursues the
+   * objective and is re-prompted after each run until a judge marks it done or
+   * `maxIterations` is reached. The loop runs in this conversation's history and
+   * event stream — it does not fork. Throws on 409 if a run or goal loop is
+   * already active, and on 400 for an invalid objective (e.g. empty).
+   */
+  async startGoal(objective: string, maxIterations?: number): Promise<void> {
+    const request: StartGoalRequest = { objective };
+    if (maxIterations !== undefined) {
+      request.max_iterations = maxIterations;
+    }
+    await this.client.post(`/api/conversations/${this.id}/goal`, request);
+  }
+
+  /**
+   * Stop the active `/goal` loop in this conversation. Cancels only the
+   * background goal loop (not the conversation) and records an `interrupted`
+   * status so {@link resumeGoal} can continue it. Succeeds even when no loop is
+   * currently running.
+   */
+  async stopGoal(): Promise<void> {
+    await this.client.post(`/api/conversations/${this.id}/goal/stop`, {});
+  }
+
+  /**
+   * Resume the last interrupted `/goal` loop in this conversation, continuing
+   * from the iteration it had reached. Throws on 409 if a run or goal loop is
+   * already active, and on 400 when there is no resumable goal.
+   */
+  async resumeGoal(): Promise<void> {
+    await this.client.post(`/api/conversations/${this.id}/goal/resume`, {});
   }
 
   /**
