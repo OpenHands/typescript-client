@@ -1,10 +1,8 @@
 name: Publish to npm
 
 on:
-  # Primary trigger: a published GitHub Release. release-please (see release.yml)
-  # creates the release with a GitHub App token, so this `release: published`
-  # event IS delivered — it would be suppressed for a release created by the
-  # default GITHUB_TOKEN.
+  # Published Release (release-please creates it with the App token, so
+  # `release: published` fires; a GITHUB_TOKEN release would be suppressed).
   release:
     types: [published]
   # Manual re-publish for an already-released version (e.g. when a prior run
