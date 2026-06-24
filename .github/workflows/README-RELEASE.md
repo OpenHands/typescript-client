@@ -80,7 +80,7 @@ push to main ──▶ release.yml (release-please) ──▶ maintains "release
 | File | Purpose |
 |---|---|
 | `release-please-config.json` | release-please config — `release-type: node` (bumps `package.json`/`package-lock.json`); `include-component-in-tag: false` keeps tags as `vX.Y.Z` |
-| `.release-please-manifest.json` | last released version, seeded `{ ".": "1.24.2" }` |
+| `.release-please-manifest.json` | last released version, seeded `{ ".": "1.26.0" }` (matches npm `latest` / the newest `vX.Y.Z` tag) |
 | `.github/release.yml` | release-notes categories, grouped by `type:` labels |
 
 ## Downstream consumers
