@@ -81,8 +81,9 @@ jobs:
         run: npm test
 
       # Set the version BEFORE build so any source that reads package.json at
-      # compile time picks up the correct value. Supports a tag push (version
-      # from the tag) and a manual re-run (version from the input).
+      # compile time picks up the correct value. Supports an explicitly
+      # dispatched release (version from the input) and release events (version
+      # from the tag).
       - name: Extract and set version
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -90,8 +91,14 @@ jobs:
           else
             TARGET_VERSION="${GITHUB_REF#refs/tags/v}"
           fi
-          echo "Publishing version: $TARGET_VERSION"
-          npm version "$TARGET_VERSION" --no-git-tag-version
+
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Publishing version: $TARGET_VERSION (current package.json: $CURRENT_VERSION)"
+          if [ "$CURRENT_VERSION" = "$TARGET_VERSION" ]; then
+            echo "package.json already matches target version; skipping npm version"
+          else
+            npm version "$TARGET_VERSION" --no-git-tag-version
+          fi
 
       - name: Build package
         run: npm run build

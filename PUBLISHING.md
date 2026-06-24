@@ -36,7 +36,7 @@ documented in [`.github/workflows/README-RELEASE.md`](.github/workflows/README-R
    - `release.yml`: publishes to **GitHub Packages**.
    - `version-bump-prs.yml`: opens a bump PR in `agent-canvas` once the version is live on npm.
 
-The manual publish workflow (`.github/workflows/publish-github-packages.yml`) is for explicit `workflow_dispatch` recovery only.
+The publish workflows can also be run manually with a `version` input for recovery if a publish job fails after the GitHub Release is created.
 
 ## Manual Publishing
 
@@ -119,6 +119,9 @@ Common issues:
 
 ## Workflow Files
 
-- `.github/workflows/npm-publish.yml`: Tag-triggered npm (npmjs.org) publish workflow (OIDC trusted publishing)
-- `.github/workflows/release.yml`: Tag-triggered GitHub Packages publish + GitHub Release workflow
-- `.github/workflows/publish-github-packages.yml`: Manual GitHub Packages recovery workflow (`workflow_dispatch` only)
+- `.github/workflows/prepare-release.yml`: Manual dispatch workflow that opens the version-bump `rel-X.Y.Z` PR.
+- `.github/workflows/create-release.yml`: Runs when a `rel-*` PR is merged; creates the GitHub Release and dispatches publish workflows.
+- `.github/workflows/npm-publish.yml`: `release: published` / manual npmjs.org publish workflow (OIDC trusted publishing) that dispatches downstream version bumps after success.
+- `.github/workflows/release.yml`: `release: published` / manual GitHub Packages publish workflow. GitHub Release creation lives in `create-release.yml`.
+- `.github/workflows/version-bump-prs.yml`: Manual dispatch workflow used by `npm-publish.yml` to open exact-pin consumer bump PRs.
+- `.github/workflows/publish-github-packages.yml`: Legacy manual GitHub Packages recovery workflow (`workflow_dispatch` only).
