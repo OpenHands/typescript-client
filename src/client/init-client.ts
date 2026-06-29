@@ -1,12 +1,17 @@
 import { HttpClient } from './http-client';
 import type { InitRequest, InitStatus } from '../models/api';
 
+/**
+ * Base client options; `apiKey`, when provided, is sent as `X-Session-API-Key`
+ * by the shared {@link HttpClient} on every request.
+ */
 export interface InitClientOptions {
   host: string;
   apiKey?: string;
   timeout?: number;
 }
 
+/** Options for `POST /api/init`; `initApiKey` becomes `X-Init-API-Key`. */
 export interface InitializeOptions {
   /**
    * Bootstrap credential sent as the `X-Init-API-Key` header. This is distinct
@@ -48,8 +53,10 @@ export class InitClient {
    * Report the current deferred-init state via `GET /api/init`.
    *
    * Authentication is intentionally not required so a warm-pool controller can
-   * poll without holding the init key. Returns 404 when the server is not
-   * running in deferred-init mode.
+   * poll without holding the init key. If this client was constructed with
+   * `apiKey`, `HttpClient` still sends it as `X-Session-API-Key`; omit `apiKey`
+   * for dormant warm-pool polling that must not send a session header. Returns
+   * 404 when the server is not running in deferred-init mode.
    */
   async getStatus(): Promise<InitStatus> {
     const response = await this.client.get<InitStatus>('/api/init');

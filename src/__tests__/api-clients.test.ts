@@ -32,8 +32,48 @@ import {
   SkillsClient,
   WorkspacesClient,
 } from '../clients';
+import * as http from 'node:http';
+import { EventEmitter } from 'node:events';
+
+// `fetch` rejects a GET body, so the batch endpoints route through node:http.
+// Its `request` export isn't configurable (jest.spyOn fails), so mock the module.
+jest.mock('node:http', () => ({
+  ...jest.requireActual('node:http'),
+  request: jest.fn(),
+}));
 
 const originalFetch = global.fetch;
+
+/**
+ * Drive the mocked Node `http.request` for the GET-with-body transport path used
+ * by the batch endpoints. Captures the request URL/options/body and replays a
+ * canned JSON response.
+ */
+function mockNodeHttpRequest(responseBody: string, status = 200) {
+  const captured: { url?: URL; options?: http.RequestOptions; body?: string } = {};
+  (http.request as jest.Mock).mockImplementation((url: unknown, options: unknown, cb: unknown) => {
+    captured.url = url as URL;
+    captured.options = options as http.RequestOptions;
+    const callback = cb as (res: http.IncomingMessage) => void;
+    const req = new EventEmitter() as unknown as http.ClientRequest;
+    (req as unknown as { setTimeout: unknown }).setTimeout = jest.fn();
+    (req as unknown as { destroy: unknown }).destroy = jest.fn();
+    (req as unknown as { end: unknown }).end = jest.fn((body?: string) => {
+      captured.body = body;
+      process.nextTick(() => {
+        const res = new EventEmitter() as unknown as http.IncomingMessage;
+        res.statusCode = status;
+        res.statusMessage = status === 200 ? 'OK' : 'Error';
+        res.headers = { 'content-type': 'application/json' };
+        callback(res);
+        res.emit('data', Buffer.from(responseBody));
+        res.emit('end');
+      });
+    });
+    return req;
+  });
+  return { captured };
+}
 
 describe('Auxiliary API clients', () => {
   afterEach(() => {
@@ -511,13 +551,31 @@ describe('Auxiliary API clients', () => {
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       6,
-      'http://example.com/api/skills/installed/my-skill/update',
+      'http://example.com/api/skills/installed/my-skill/refresh',
       expect.objectContaining({ method: 'POST' })
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       7,
       'http://example.com/api/skills/marketplace',
       expect.objectContaining({ method: 'GET' })
+    );
+  });
+
+  it('SkillsClient.refreshSkill POSTs to the /refresh route', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ message: 'updated', skill: { name: 'my-skill' } }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const client = new SkillsClient({ host: 'http://example.com' });
+    const refreshed = await client.refreshSkill('my-skill');
+
+    expect(refreshed.message).toBe('updated');
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/skills/installed/my-skill/refresh',
+      expect.objectContaining({ method: 'POST' })
     );
   });
 
@@ -2170,5 +2228,20 @@ describe('Auxiliary API clients', () => {
     const [, init] = (global.fetch as jest.Mock).mock.calls[0];
     expect(init.body).toBe(JSON.stringify({}));
     expect((init.headers as Record<string, string>)['X-Init-API-Key']).toBeUndefined();
+  });
+
+  it('BashClient.batchGetEvents GETs the batch endpoint with the event ids in the body', async () => {
+    const events = [{ id: 'e1', kind: 'BashOutput', timestamp: '2026-05-23T12:00:00Z' }, null];
+    const { captured } = mockNodeHttpRequest(JSON.stringify(events));
+
+    const client = new BashClient({ host: 'http://example.com' });
+    const result = await client.batchGetEvents(['e1', 'missing']);
+
+    expect(result).toHaveLength(2);
+    expect(result[0]?.id).toBe('e1');
+    expect(result[1]).toBeNull();
+    expect(captured.options?.method).toBe('GET');
+    expect(captured.url?.toString()).toBe('http://example.com/api/bash/bash_events/');
+    expect(JSON.parse(captured.body ?? 'null')).toEqual(['e1', 'missing']);
   });
 });
