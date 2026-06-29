@@ -391,4 +391,33 @@ describe('Deterministic API Integration Tests', () => {
     },
     config.testTimeout
   );
+
+  it(
+    'reaches the deferred-init routes and reports not-deferred with 404',
+    async () => {
+      // The pinned image runs in the normal (non-deferred) mode, so no
+      // InitService is registered and both /api/init routes answer 404 via
+      // get_init_service. A 404 (not a 405/422) proves the GET and POST routes
+      // exist on the image AND that the client targets the right path/method —
+      // client<->server contract drift the mocked unit tests cannot catch.
+      let getStatus: number | undefined;
+      try {
+        await manager.init.getStatus();
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpError);
+        getStatus = (error as HttpError).status;
+      }
+      expect(getStatus).toBe(404);
+
+      let postStatus: number | undefined;
+      try {
+        await manager.init.initialize({ session_api_keys: ['noop'] });
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpError);
+        postStatus = (error as HttpError).status;
+      }
+      expect(postStatus).toBe(404);
+    },
+    config.testTimeout
+  );
 });

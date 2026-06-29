@@ -19,6 +19,7 @@ import {
   ConversationClient,
   FileClient,
   HooksClient,
+  InitClient,
   isAgentServerVersionError,
   LLMMetadataClient,
   MCPClient,
@@ -2103,5 +2104,71 @@ describe('Auxiliary API clients', () => {
       'http://example.com/api/shared-events/search?conversation_id=shared-1&limit=50',
       expect.objectContaining({ method: 'GET' })
     );
+  });
+
+  it('ConversationManager exposes the init namespace', () => {
+    const manager = new ConversationManager({ host: 'http://example.com', apiKey: 'secret' });
+
+    expect(manager.init).toBeInstanceOf(InitClient);
+    expect(manager.init.host).toBe('http://example.com');
+    expect(manager.init.apiKey).toBe('secret');
+  });
+
+  it('InitClient.getStatus GETs /api/init', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ state: 'dormant', error: null }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const client = new InitClient({ host: 'http://example.com' });
+    const status = await client.getStatus();
+
+    expect(status.state).toBe('dormant');
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/init',
+      expect.objectContaining({ method: 'GET' })
+    );
+  });
+
+  it('InitClient.initialize POSTs /api/init with the X-Init-API-Key header and body', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ state: 'ready', error: null }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const client = new InitClient({ host: 'http://example.com' });
+    const status = await client.initialize(
+      { session_api_keys: ['user-key'], max_concurrent_runs: 4 },
+      { initApiKey: 'bootstrap-secret' }
+    );
+
+    expect(status.state).toBe('ready');
+    const [url, init] = (global.fetch as jest.Mock).mock.calls[0];
+    expect(url).toBe('http://example.com/api/init');
+    expect(init.method).toBe('POST');
+    expect(init.body).toBe(
+      JSON.stringify({ session_api_keys: ['user-key'], max_concurrent_runs: 4 })
+    );
+    expect((init.headers as Record<string, string>)['X-Init-API-Key']).toBe('bootstrap-secret');
+  });
+
+  it('InitClient.initialize omits the X-Init-API-Key header when no key is given', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ state: 'ready', error: null }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const client = new InitClient({ host: 'http://example.com' });
+    await client.initialize();
+
+    const [, init] = (global.fetch as jest.Mock).mock.calls[0];
+    expect(init.body).toBe(JSON.stringify({}));
+    expect((init.headers as Record<string, string>)['X-Init-API-Key']).toBeUndefined();
   });
 });

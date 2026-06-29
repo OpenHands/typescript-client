@@ -483,3 +483,43 @@ export interface EventPage<TEvent = unknown> {
   items: TEvent[];
   next_page_id: string | null;
 }
+
+/**
+ * Deferred-init lifecycle state of a warm-pool agent-server.
+ * - `dormant` — up but waiting for `POST /api/init`.
+ * - `initializing` — `/api/init` received, services starting.
+ * - `ready` — initialization complete; all `/api/*` routes are live.
+ */
+export type InitState = 'dormant' | 'initializing' | 'ready';
+
+export interface InitStatus {
+  state: InitState;
+  /** Error message from a previous failed `/api/init` attempt, if any. */
+  error?: string | null;
+}
+
+/**
+ * Runtime configuration delivered to a dormant server at `POST /api/init`.
+ * Every field is optional and overrides the equivalent field on the dormant
+ * `Config`; omitted fields keep the value the server booted with.
+ */
+export interface InitRequest {
+  /** Per-user session API keys enforced on subsequent `/api/*` requests. */
+  session_api_keys?: string[] | null;
+  /** Symmetric secret used to encrypt persisted secrets. */
+  secret_key?: string | null;
+  /** Directory where conversations are persisted. */
+  conversations_path?: string | null;
+  /** Directory where bash events are persisted. */
+  bash_events_dir?: string | null;
+  /** Per-user webhooks (e.g. for streaming events back). */
+  webhooks?: unknown[] | null;
+  /** External URL where this server is reachable (root-path calculation). */
+  web_url?: string | null;
+  /** CORS origins to add to the existing localhost allowlist. */
+  allow_cors_origins?: string[] | null;
+  /** Override the conversation-step concurrency limit. */
+  max_concurrent_runs?: number | null;
+  /** Process environment variables to set before conversation services start. */
+  env?: Record<string, string> | null;
+}
