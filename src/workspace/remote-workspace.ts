@@ -297,6 +297,13 @@ export class RemoteWorkspace implements IWorkspace {
    * Convenience method to trigger a browser download of a file
    */
   async downloadAndSave(sourcePath: string, saveAsFileName?: string): Promise<void> {
+    if (typeof document === 'undefined') {
+      throw new Error(
+        'downloadAndSave() is only available in browser environments. ' +
+          'Use downloadAsBlob() or downloadAsText() in Node.js.'
+      );
+    }
+
     const blob = await this.downloadAsBlob(sourcePath);
 
     const url = URL.createObjectURL(blob);
