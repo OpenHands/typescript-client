@@ -15,14 +15,9 @@ import {
   ConversationCallbackType,
 } from '../types/base';
 import { ConversationInfo } from '../models/conversation';
+import { ConversationStateUpdateEvent } from '../events/types';
 
 const FULL_STATE_KEY = '__full_state__';
-
-export interface ConversationStateUpdateEvent extends Event {
-  kind: 'ConversationStateUpdateEvent';
-  key: string;
-  value: any;
-}
 
 export class RemoteState {
   private client: HttpClient;
@@ -80,7 +75,7 @@ export class RemoteState {
         if (this.cachedState === null) {
           this.cachedState = {} as ConversationInfo;
         }
-        const stateValue = event.value?.full_state ?? event.value;
+        const stateValue = (event.value as any)?.full_state ?? event.value;
         Object.assign(this.cachedState, stateValue);
       } else {
         if (this.cachedState === null) {
