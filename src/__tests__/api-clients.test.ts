@@ -2147,7 +2147,6 @@ describe('Auxiliary API clients', () => {
 
   it('BashClient.batchGetEvents GETs the batch endpoint with the event ids in the body', async () => {
     const events = [{ id: 'e1', kind: 'BashOutput', timestamp: '2026-05-23T12:00:00Z' }, null];
-    // `fetch` rejects a GET body, so the batch endpoint goes through node:http.
     const { captured } = mockNodeHttpRequest(JSON.stringify(events));
 
     const client = new BashClient({ host: 'http://example.com' });

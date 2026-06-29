@@ -58,6 +58,25 @@ export class HttpClient {
     this.timeout = options.timeout || 60000;
   }
 
+  private buildUrl(path: string, params?: Record<string, unknown>): URL {
+    const relativePath = path.startsWith('/') ? path.slice(1) : path;
+    const url = new URL(relativePath, this.baseUrl + '/');
+
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (Array.isArray(value)) {
+            value.forEach((item) => url.searchParams.append(key, String(item)));
+          } else {
+            url.searchParams.append(key, String(value));
+          }
+        }
+      });
+    }
+
+    return url;
+  }
+
   async request<T = unknown>(options: RequestOptions): Promise<HttpResponse<T>> {
     // `fetch` (and browsers) reject a body on a GET request, but a few
     // agent-server batch endpoints (e.g. `GET /api/bash/bash_events/` and
@@ -68,20 +87,7 @@ export class HttpClient {
       return this.requestWithBodyOnGet<T>(options);
     }
 
-    const relativePath = options.url.startsWith('/') ? options.url.slice(1) : options.url;
-    const url = new URL(relativePath, this.baseUrl + '/');
-
-    if (options.params) {
-      Object.entries(options.params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          if (Array.isArray(value)) {
-            value.forEach((item) => url.searchParams.append(key, String(item)));
-          } else {
-            url.searchParams.append(key, String(value));
-          }
-        }
-      });
-    }
+    const url = this.buildUrl(options.url, options.params);
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -180,20 +186,7 @@ export class HttpClient {
   private async requestWithBodyOnGet<T = unknown>(
     options: RequestOptions
   ): Promise<HttpResponse<T>> {
-    const relativePath = options.url.startsWith('/') ? options.url.slice(1) : options.url;
-    const url = new URL(relativePath, this.baseUrl + '/');
-
-    if (options.params) {
-      Object.entries(options.params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          if (Array.isArray(value)) {
-            value.forEach((item) => url.searchParams.append(key, String(item)));
-          } else {
-            url.searchParams.append(key, String(value));
-          }
-        }
-      });
-    }
+    const url = this.buildUrl(options.url, options.params);
 
     const body = typeof options.data === 'string' ? options.data : JSON.stringify(options.data);
 
