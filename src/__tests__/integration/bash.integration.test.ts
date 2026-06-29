@@ -27,8 +27,7 @@ describe('Bash API Integration Tests', () => {
         async () => {
           const page = await bash.searchEvents({ command_id__eq: command.id, limit: 20 });
           outputEvent = page.items.find((event) => event.kind === 'BashOutput') as
-            | BashOutput
-            | undefined;
+            BashOutput | undefined;
           return Boolean(outputEvent?.exit_code !== undefined);
         },
         { timeout: config.testTimeout, interval: 250, message: 'bash output was not produced' }
@@ -36,12 +35,22 @@ describe('Bash API Integration Tests', () => {
 
       const fetchedCommand = await bash.getEvent(command.id);
       const batch = await bash.getEvents([command.id, outputEvent!.id]);
+      // Server-side batch endpoint (GET /api/bash/bash_events/). Includes a
+      // bogus id to confirm missing items come back as null in place.
+      const serverBatch = await bash.batchGetEvents([
+        command.id,
+        'does-not-exist',
+        outputEvent!.id,
+      ]);
       const executeResult = await bash.executeCommand('printf "bash-execute-test"');
       const cleared = await bash.clearEvents();
 
       expect(fetchedCommand.id).toBe(command.id);
       expect(batch[0]?.id).toBe(command.id);
       expect(batch[1]?.id).toBe(outputEvent!.id);
+      expect(serverBatch[0]?.id).toBe(command.id);
+      expect(serverBatch[1]).toBeNull();
+      expect(serverBatch[2]?.id).toBe(outputEvent!.id);
       expect(outputEvent?.stdout).toContain('bash-search-test');
       expect(executeResult.stdout).toContain('bash-execute-test');
       expect(cleared.cleared_count).toBeGreaterThanOrEqual(1);

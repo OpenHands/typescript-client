@@ -23,6 +23,7 @@ import {
   LLMMetadataClient,
   MCPClient,
   MetaProfilesClient,
+  PluginsClient,
   ProfilesClient,
   ServerClient,
   SettingsClient,
@@ -30,8 +31,48 @@ import {
   SkillsClient,
   WorkspacesClient,
 } from '../clients';
+import * as http from 'node:http';
+import { EventEmitter } from 'node:events';
+
+// `fetch` rejects a GET body, so the batch endpoints route through node:http.
+// Its `request` export isn't configurable (jest.spyOn fails), so mock the module.
+jest.mock('node:http', () => ({
+  ...jest.requireActual('node:http'),
+  request: jest.fn(),
+}));
 
 const originalFetch = global.fetch;
+
+/**
+ * Drive the mocked Node `http.request` for the GET-with-body transport path used
+ * by the batch endpoints. Captures the request URL/options/body and replays a
+ * canned JSON response.
+ */
+function mockNodeHttpRequest(responseBody: string, status = 200) {
+  const captured: { url?: URL; options?: http.RequestOptions; body?: string } = {};
+  (http.request as jest.Mock).mockImplementation((url: unknown, options: unknown, cb: unknown) => {
+    captured.url = url as URL;
+    captured.options = options as http.RequestOptions;
+    const callback = cb as (res: http.IncomingMessage) => void;
+    const req = new EventEmitter() as unknown as http.ClientRequest;
+    (req as unknown as { setTimeout: unknown }).setTimeout = jest.fn();
+    (req as unknown as { destroy: unknown }).destroy = jest.fn();
+    (req as unknown as { end: unknown }).end = jest.fn((body?: string) => {
+      captured.body = body;
+      process.nextTick(() => {
+        const res = new EventEmitter() as unknown as http.IncomingMessage;
+        res.statusCode = status;
+        res.statusMessage = status === 200 ? 'OK' : 'Error';
+        res.headers = { 'content-type': 'application/json' };
+        callback(res);
+        res.emit('data', Buffer.from(responseBody));
+        res.emit('end');
+      });
+    });
+    return req;
+  });
+  return { captured };
+}
 
 describe('Auxiliary API clients', () => {
   afterEach(() => {
@@ -509,13 +550,31 @@ describe('Auxiliary API clients', () => {
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       6,
-      'http://example.com/api/skills/installed/my-skill/update',
+      'http://example.com/api/skills/installed/my-skill/refresh',
       expect.objectContaining({ method: 'POST' })
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       7,
       'http://example.com/api/skills/marketplace',
       expect.objectContaining({ method: 'GET' })
+    );
+  });
+
+  it('SkillsClient.refreshSkill POSTs to the /refresh route', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ message: 'updated', skill: { name: 'my-skill' } }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const client = new SkillsClient({ host: 'http://example.com' });
+    const refreshed = await client.refreshSkill('my-skill');
+
+    expect(refreshed.message).toBe('updated');
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/skills/installed/my-skill/refresh',
+      expect.objectContaining({ method: 'POST' })
     );
   });
 
@@ -533,6 +592,154 @@ describe('Auxiliary API clients', () => {
     expect(global.fetch).toHaveBeenCalledWith(
       'http://example.com/api/skills/installed/my%20skill',
       expect.objectContaining({ method: 'GET' })
+    );
+  });
+
+  it('PluginsClient.getPluginsMarketplace fetches the plugins marketplace', async () => {
+    const payload = {
+      plugins: [
+        {
+          name: 'city-weather',
+          description: 'Weather plugin',
+          source: 'github:OpenHands/extensions',
+          ref: null,
+          repo_path: 'plugins/city-weather',
+          installed: false,
+        },
+      ],
+    };
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const client = new PluginsClient({ host: 'http://example.com' });
+    const result = await client.getPluginsMarketplace();
+
+    expect(result.plugins).toHaveLength(1);
+    expect(result.plugins[0].installed).toBe(false);
+    expect(result.plugins[0].repo_path).toBe('plugins/city-weather');
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/plugins/marketplace',
+      expect.objectContaining({ method: 'GET' })
+    );
+  });
+
+  it('PluginsClient management methods map to the correct endpoints', async () => {
+    const installedPlugin = {
+      name: 'demo-plugin',
+      version: '1.0.0',
+      description: 'A test plugin',
+      enabled: true,
+      source: '/tmp/demo-plugin',
+      resolved_ref: null,
+      repo_path: null,
+      installed_at: '2026-05-12T12:00:00Z',
+      install_path: '/home/.openhands/plugins/installed/demo-plugin',
+    };
+    const availableList = {
+      plugins: [{ name: 'demo-plugin', version: '1.0.0', description: 'A test plugin' }],
+    };
+    const installedList = { plugins: [installedPlugin] };
+    const toggleResponse = { name: 'demo-plugin', enabled: false };
+    const uninstallResponse = { message: "Plugin 'demo-plugin' uninstalled" };
+    const refreshResponse = {
+      message: "Plugin 'demo-plugin' updated",
+      plugin: installedPlugin,
+    };
+
+    const responses = [
+      availableList,
+      installedPlugin,
+      installedList,
+      installedPlugin,
+      toggleResponse,
+      uninstallResponse,
+      refreshResponse,
+    ];
+    global.fetch = jest.fn().mockImplementation(() => {
+      const body = responses.shift();
+      return Promise.resolve(
+        new Response(JSON.stringify(body), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      );
+    }) as typeof fetch;
+
+    const client = new PluginsClient({ host: 'http://example.com' });
+
+    const available = await client.getPlugins({ load_user: true, load_project: false });
+    expect(available.plugins[0].name).toBe('demo-plugin');
+
+    const installed = await client.installPlugin({
+      source: '/tmp/demo-plugin',
+      force: false,
+    });
+    expect(installed.name).toBe('demo-plugin');
+    expect(installed.enabled).toBe(true);
+
+    const list = await client.listInstalledPlugins();
+    expect(list.plugins).toHaveLength(1);
+
+    const got = await client.getInstalledPlugin('demo-plugin');
+    expect(got.name).toBe('demo-plugin');
+
+    const toggled = await client.setPluginEnabled('demo-plugin', false);
+    expect(toggled.enabled).toBe(false);
+
+    const uninstalled = await client.uninstallPlugin('demo-plugin');
+    expect(uninstalled.message).toContain('uninstalled');
+
+    const refreshed = await client.refreshPlugin('demo-plugin');
+    expect(refreshed.message).toContain('updated');
+    expect(refreshed.plugin.name).toBe('demo-plugin');
+
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      1,
+      'http://example.com/api/plugins',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ load_user: true, load_project: false }),
+      })
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      2,
+      'http://example.com/api/plugins/install',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ source: '/tmp/demo-plugin', force: false }),
+      })
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      3,
+      'http://example.com/api/plugins/installed',
+      expect.objectContaining({ method: 'GET' })
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      4,
+      'http://example.com/api/plugins/installed/demo-plugin',
+      expect.objectContaining({ method: 'GET' })
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      5,
+      'http://example.com/api/plugins/installed/demo-plugin',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({ enabled: false }),
+      })
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      6,
+      'http://example.com/api/plugins/installed/demo-plugin',
+      expect.objectContaining({ method: 'DELETE' })
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      7,
+      'http://example.com/api/plugins/installed/demo-plugin/refresh',
+      expect.objectContaining({ method: 'POST' })
     );
   });
 
@@ -1954,5 +2161,20 @@ describe('Auxiliary API clients', () => {
       'http://example.com/api/shared-events/search?conversation_id=shared-1&limit=50',
       expect.objectContaining({ method: 'GET' })
     );
+  });
+
+  it('BashClient.batchGetEvents GETs the batch endpoint with the event ids in the body', async () => {
+    const events = [{ id: 'e1', kind: 'BashOutput', timestamp: '2026-05-23T12:00:00Z' }, null];
+    const { captured } = mockNodeHttpRequest(JSON.stringify(events));
+
+    const client = new BashClient({ host: 'http://example.com' });
+    const result = await client.batchGetEvents(['e1', 'missing']);
+
+    expect(result).toHaveLength(2);
+    expect(result[0]?.id).toBe('e1');
+    expect(result[1]).toBeNull();
+    expect(captured.options?.method).toBe('GET');
+    expect(captured.url?.toString()).toBe('http://example.com/api/bash/bash_events/');
+    expect(JSON.parse(captured.body ?? 'null')).toEqual(['e1', 'missing']);
   });
 });

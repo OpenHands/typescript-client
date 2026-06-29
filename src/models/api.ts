@@ -160,6 +160,72 @@ export interface MarketplaceResponse {
   skills: MarketplaceSkill[];
 }
 
+export interface MarketplacePlugin {
+  name: string;
+  description: string | null;
+  source: string;
+  ref?: string | null;
+  repo_path?: string | null;
+  installed: boolean;
+}
+
+export interface MarketplaceCatalogResponse {
+  plugins: MarketplacePlugin[];
+}
+
+export interface PluginsRequest {
+  load_user?: boolean;
+  load_project?: boolean;
+  project_dir?: string | null;
+}
+
+export interface PluginInfo {
+  name: string;
+  version: string;
+  description: string;
+}
+
+export interface PluginsResponse {
+  plugins: PluginInfo[];
+}
+
+export interface InstallPluginRequest {
+  source: string;
+  ref?: string | null;
+  repo_path?: string | null;
+  force?: boolean;
+}
+
+export interface InstalledPluginInfo {
+  name: string;
+  version: string;
+  description: string;
+  enabled: boolean;
+  source: string;
+  resolved_ref?: string | null;
+  repo_path?: string | null;
+  installed_at: string;
+  install_path: string;
+}
+
+export interface InstalledPluginsResponse {
+  plugins: InstalledPluginInfo[];
+}
+
+export interface TogglePluginResponse {
+  name: string;
+  enabled: boolean;
+}
+
+export interface PluginActionResponse {
+  message: string;
+}
+
+export interface RefreshPluginResponse {
+  message: string;
+  plugin: InstalledPluginInfo;
+}
+
 export interface DesktopUrlResponse {
   url: string | null;
 }
