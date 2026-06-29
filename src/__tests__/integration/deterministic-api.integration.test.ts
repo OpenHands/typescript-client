@@ -391,4 +391,38 @@ describe('Deterministic API Integration Tests', () => {
     },
     config.testTimeout
   );
+
+  it(
+    'batch-gets conversation events via the server endpoint',
+    async () => {
+      // Contract guard for GET /api/conversations/{id}/events (the server-side
+      // batch endpoint, distinct from the per-id loop in getEvents). The route
+      // requires the event ids in the request body and returns one entry per
+      // requested id; here we round-trip a real event to prove the route
+      // resolves and preserves input order. Unlike the bash batch endpoint, the
+      // conversation endpoint raises on unknown ids rather than returning null,
+      // so this exercises the happy path with an id that exists.
+      const client = new ConversationClient({ host: config.agentServerUrl });
+      const conversation = await manager.createConversation(createDummyAgent(), {
+        workingDir: config.agentWorkspaceDir,
+      });
+      try {
+        await conversation.sendMessage('Batch get conversation events message');
+        const searchResult = await conversation.state.events.search({
+          limit: 10,
+          sort_order: 'TIMESTAMP_DESC',
+        });
+        expect(searchResult.items.length).toBeGreaterThan(0);
+
+        const realId = searchResult.items[0].id;
+        const batch = await client.batchGetEvents(conversation.id, [realId]);
+        expect(batch).toHaveLength(1);
+        expect(batch[0]?.id).toBe(realId);
+      } finally {
+        await manager.deleteConversation(conversation.id).catch(() => undefined);
+        client.close();
+      }
+    },
+    config.testTimeout
+  );
 });

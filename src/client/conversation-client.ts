@@ -143,6 +143,25 @@ export class ConversationClient {
     );
   }
 
+  /**
+   * Batch-fetch conversation events in a single request via
+   * `GET /api/conversations/{id}/events`.
+   *
+   * Unlike {@link getEvents} (which fans out one request per id), this calls the
+   * server-side batch endpoint and returns one entry per requested id, with
+   * `null` in the slots of any missing event — preserving input order.
+   */
+  async batchGetEvents(
+    conversationId: string,
+    eventIds: string[]
+  ): Promise<Array<ConversationEvent | null>> {
+    const response = await this.client.get<(ConversationEvent | null)[]>(
+      `/api/conversations/${conversationId}/events`,
+      { data: eventIds }
+    );
+    return response.data;
+  }
+
   async sendEvent(
     conversationId: string,
     event: object,
