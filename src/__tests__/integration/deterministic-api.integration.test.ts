@@ -8,6 +8,7 @@ import {
   uniqueDirName,
   uniqueFileName,
   workspaceFileExists,
+  writeWorkspaceFile,
 } from './test-utils';
 
 const config = getServerTestConfig();
@@ -386,6 +387,52 @@ describe('Deterministic API Integration Tests', () => {
           expect(status).toBe(404);
         }
       } finally {
+        client.close();
+      }
+    },
+    config.testTimeout
+  );
+
+  it(
+    'serves conversation workspace files over the static workspace routes',
+    async () => {
+      // Exercises GET /api/conversations/{id}/workspace (root index.html) and
+      // GET /api/conversations/{id}/workspace/{file_path}. The conversation's
+      // working dir is the mounted workspace, so files written there are served
+      // back verbatim through the static routes.
+      const client = new ConversationClient({ host: config.agentServerUrl });
+      const conversation = await manager.createConversation(createDummyAgent(), {
+        workingDir: config.agentWorkspaceDir,
+      });
+      const rootIndex = 'index.html';
+      const nestedDir = uniqueDirName('ws-serve');
+      const nestedFile = `${nestedDir}/page.html`;
+      const rootContent = '<html><body>workspace root</body></html>';
+      const nestedContent = '<html><body>nested workspace page</body></html>';
+      try {
+        writeWorkspaceFile(rootIndex, rootContent);
+        writeWorkspaceFile(nestedFile, nestedContent);
+        await sleep(300);
+
+        const servedRoot = await client.getWorkspaceRoot(conversation.id);
+        const servedFile = await client.getWorkspaceFile(conversation.id, nestedFile);
+        expect(servedRoot).toBeInstanceOf(Blob);
+        expect(await servedRoot.text()).toBe(rootContent);
+        expect(await servedFile.text()).toBe(nestedContent);
+
+        // A file the workspace does not contain yields 404.
+        let missingStatus: number | undefined;
+        try {
+          await client.getWorkspaceFile(conversation.id, `${nestedDir}/missing.html`);
+        } catch (error) {
+          expect(error).toBeInstanceOf(HttpError);
+          missingStatus = (error as HttpError).status;
+        }
+        expect(missingStatus).toBe(404);
+      } finally {
+        deleteWorkspaceFile(rootIndex);
+        await workspace.executeCommand(`rm -rf ${config.agentWorkspaceDir}/${nestedDir}`);
+        await manager.deleteConversation(conversation.id).catch(() => undefined);
         client.close();
       }
     },

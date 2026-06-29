@@ -356,6 +356,39 @@ export class ConversationClient {
     return response.data;
   }
 
+  /**
+   * Fetch the conversation workspace root (`index.html`) served as a static
+   * file by `GET /api/conversations/{id}/workspace`.
+   *
+   * The agent-server only serves *local* workspaces; non-local workspaces, a
+   * missing directory, or the absence of an `index.html` all yield 404. The
+   * raw bytes are returned as a {@link Blob} so binary artifacts survive intact
+   * (call `.text()` for HTML/text).
+   */
+  async getWorkspaceRoot(conversationId: string): Promise<Blob> {
+    const response = await this.client.get<Blob>(`/api/conversations/${conversationId}/workspace`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  }
+
+  /**
+   * Fetch a single file (or a directory's `index.html`) from the conversation
+   * workspace via `GET /api/conversations/{id}/workspace/{filePath}`.
+   *
+   * `filePath` is a workspace-relative path; nested paths are supported. Paths
+   * that escape the workspace are rejected by the server with 400, and a
+   * missing file/conversation yields 404. The raw bytes are returned as a
+   * {@link Blob} so binary artifacts survive intact (call `.text()` for text).
+   */
+  async getWorkspaceFile(conversationId: string, filePath: string): Promise<Blob> {
+    const response = await this.client.get<Blob>(
+      `/api/conversations/${conversationId}/workspace/${filePath}`,
+      { responseType: 'blob' }
+    );
+    return response.data;
+  }
+
   close(): void {
     this.client.close();
   }

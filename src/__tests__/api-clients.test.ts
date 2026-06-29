@@ -2104,4 +2104,32 @@ describe('Auxiliary API clients', () => {
       expect.objectContaining({ method: 'GET' })
     );
   });
+
+  it('ConversationClient workspace methods serve the static file routes as blobs', async () => {
+    global.fetch = jest.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response('<html>workspace</html>', {
+          status: 200,
+          headers: { 'content-type': 'text/html' },
+        })
+      )
+    ) as typeof fetch;
+
+    const client = new ConversationClient({ host: 'http://example.com' });
+    const root = await client.getWorkspaceRoot('c1');
+    const file = await client.getWorkspaceFile('c1', 'sub/dir/page.html');
+
+    expect(root).toBeInstanceOf(Blob);
+    expect(await file.text()).toBe('<html>workspace</html>');
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      1,
+      'http://example.com/api/conversations/c1/workspace',
+      expect.objectContaining({ method: 'GET' })
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      2,
+      'http://example.com/api/conversations/c1/workspace/sub/dir/page.html',
+      expect.objectContaining({ method: 'GET' })
+    );
+  });
 });
