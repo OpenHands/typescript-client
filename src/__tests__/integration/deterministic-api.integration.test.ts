@@ -4,6 +4,7 @@ import { getServerTestConfig } from './test-config';
 import {
   deleteWorkspaceFile,
   readWorkspaceFile,
+  removeWorkspacePath,
   sleep,
   uniqueDirName,
   uniqueFileName,
@@ -135,7 +136,13 @@ describe('Deterministic API Integration Tests', () => {
         expect(discovered?.system_prompt).toContain('integration-test project sub-agent');
         expect(discovered?.source).toContain(agentPath);
       } finally {
-        deleteWorkspaceFile(agentPath);
+        // Remove the entire `.openhands` tree this test created, not just the
+        // agent file. Writing it from the host leaves the directory owned by
+        // the test-runner user; if left behind, the agent-server container
+        // (which runs as a different user) later fails to chmod
+        // `workspace/.openhands` during profile activation ("Operation not
+        // permitted" -> 500 Failed to activate profile).
+        removeWorkspacePath('.openhands');
       }
     },
     config.testTimeout
