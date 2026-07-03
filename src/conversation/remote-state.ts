@@ -75,7 +75,10 @@ export class RemoteState {
         if (this.cachedState === null) {
           this.cachedState = {} as ConversationInfo;
         }
-        const stateValue = (event.value as any)?.full_state ?? event.value;
+        const stateValue =
+          typeof event.value === 'object' && event.value !== null && 'full_state' in event.value
+            ? (event.value.full_state ?? event.value)
+            : event.value;
         Object.assign(this.cachedState, stateValue);
       } else {
         if (this.cachedState === null) {
