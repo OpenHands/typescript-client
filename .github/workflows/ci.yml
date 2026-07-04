@@ -32,6 +32,9 @@ jobs:
       
     - name: Run type check
       run: npm run build
+
+    - name: Run package install smoke test
+      run: npm run test:git-dependency
       
     - name: Run tests
       run: npm run test:coverage

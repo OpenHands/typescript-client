@@ -1,4 +1,6 @@
 import { ACP_PROVIDERS, getAcpProvider } from '../index';
+import providersJson from '../models/acp-providers.json';
+import { ACP_PROVIDER_DATA } from '../models/acp-providers-data';
 import type { ACPProviderKey } from '../index';
 
 /**
@@ -9,6 +11,10 @@ import type { ACPProviderKey } from '../index';
  * `api_key_env_var`, `base_url_env_var`, and `file_secrets`.
  */
 describe('ACP provider credential descriptors', () => {
+  it('keeps the runtime provider data in sync with the JSON drift-check mirror', () => {
+    expect(ACP_PROVIDER_DATA).toEqual(providersJson);
+  });
+
   const KEYS: ACPProviderKey[] = ['claude-code', 'codex', 'gemini-cli'];
 
   it('exposes an entry for each built-in provider', () => {

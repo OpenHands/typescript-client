@@ -36,11 +36,12 @@ try {
       '--input-type=module',
       '-e',
       [
+        "import { Agent, RemoteWorkspace as RootRemoteWorkspace } from '@openhands/typescript-client';",
         "import { ServerClient } from '@openhands/typescript-client/clients';",
         "import { HttpClient } from '@openhands/typescript-client/client/http-client';",
         "import { RemoteEventsList } from '@openhands/typescript-client/events/remote-events-list';",
         "import { RemoteWorkspace } from '@openhands/typescript-client/workspace/remote-workspace';",
-        'console.log(typeof ServerClient, typeof HttpClient, typeof RemoteEventsList, typeof RemoteWorkspace);',
+        'console.log(typeof Agent, typeof RootRemoteWorkspace, typeof ServerClient, typeof HttpClient, typeof RemoteEventsList, typeof RemoteWorkspace);',
       ].join('\n'),
     ],
     {

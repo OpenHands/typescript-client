@@ -4,14 +4,13 @@
  * `openhands.sdk.settings.acp_providers.ACP_PROVIDERS` in
  * https://github.com/OpenHands/software-agent-sdk.
  *
- * The data lives in `./acp-providers.json` so the Python drift check in
- * `scripts/check-acp-drift.py` can read it without executing TypeScript.
- * To add or modify a provider, edit `acp_providers.py` in software-agent-sdk
- * first, then mirror the change in `acp-providers.json` here. CI will fail
- * until the two match.
+ * The JSON mirror in `./acp-providers.json` lets the Python drift check in
+ * `scripts/check-acp-drift.py` read provider data without executing TypeScript.
+ * Runtime code imports `./acp-providers-data` instead of JSON so the published
+ * ESM package loads in Node.js without JSON import attributes.
  */
 
-import providersData from './acp-providers.json';
+import { ACP_PROVIDER_DATA } from './acp-providers-data';
 
 /**
  * Stable registry key for a built-in ACP provider.
@@ -104,7 +103,7 @@ export interface ACPProviderInfo {
 }
 
 export const ACP_PROVIDERS: Readonly<Record<ACPProviderKey, ACPProviderInfo>> =
-  providersData as Readonly<Record<ACPProviderKey, ACPProviderInfo>>;
+  ACP_PROVIDER_DATA as Readonly<Record<ACPProviderKey, ACPProviderInfo>>;
 
 /**
  * Return the {@link ACPProviderInfo} for `key`, or `null` if unknown.
