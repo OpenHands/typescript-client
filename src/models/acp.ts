@@ -4,14 +4,15 @@
  * `openhands.sdk.settings.acp_providers.ACP_PROVIDERS` in
  * https://github.com/OpenHands/software-agent-sdk.
  *
- * The data lives in `./acp-providers.json` so the Python drift check in
- * `scripts/check-acp-drift.py` can read it without executing TypeScript.
+ * The runtime data is defined inline so the published ESM build does not
+ * import JSON (Node requires JSON import attributes). The JSON mirror at
+ * `./acp-providers.json` exists for Python drift checks and must stay in
+ * sync with this inline registry.
+ *
  * To add or modify a provider, edit `acp_providers.py` in software-agent-sdk
- * first, then mirror the change in `acp-providers.json` here. CI will fail
- * until the two match.
+ * first, then mirror the change in both this file and `acp-providers.json`.
+ * CI will fail until all three match.
  */
-
-import providersData from './acp-providers.json';
 
 /**
  * Stable registry key for a built-in ACP provider.
@@ -103,8 +104,138 @@ export interface ACPProviderInfo {
   readonly data_dir_env_var: string | null;
 }
 
-export const ACP_PROVIDERS: Readonly<Record<ACPProviderKey, ACPProviderInfo>> =
-  providersData as Readonly<Record<ACPProviderKey, ACPProviderInfo>>;
+const ACP_PROVIDER_DATA = {
+  'claude-code': {
+    key: 'claude-code',
+    display_name: 'Claude Code',
+    default_command: ['npx', '-y', '@agentclientprotocol/claude-agent-acp@0.44.0'],
+    api_key_env_var: 'ANTHROPIC_API_KEY',
+    base_url_env_var: 'ANTHROPIC_BASE_URL',
+    default_session_mode: 'bypassPermissions',
+    agent_name_patterns: ['claude-agent'],
+    supports_set_session_model: true,
+    session_meta_key: 'claudeCode',
+    available_models: [
+      {
+        id: 'default',
+        label: 'Default (recommended)',
+      },
+      {
+        id: 'opus[1m]',
+        label: 'Claude Opus 4.8 (1M)',
+      },
+      {
+        id: 'sonnet',
+        label: 'Claude Sonnet 4.6',
+      },
+      {
+        id: 'haiku',
+        label: 'Claude Haiku 4.5',
+      },
+    ],
+    default_model: 'opus[1m]',
+    supports_runtime_model_switch: true,
+    file_secrets: [],
+    binary_name: 'claude-agent-acp',
+    data_dir_env_var: 'CLAUDE_CONFIG_DIR',
+  },
+  codex: {
+    key: 'codex',
+    display_name: 'Codex',
+    default_command: ['npx', '-y', '@zed-industries/codex-acp@0.16.0'],
+    api_key_env_var: 'OPENAI_API_KEY',
+    base_url_env_var: 'OPENAI_BASE_URL',
+    default_session_mode: 'full-access',
+    agent_name_patterns: ['codex-acp'],
+    supports_set_session_model: true,
+    session_meta_key: null,
+    available_models: [
+      {
+        id: 'gpt-5.5',
+        label: 'GPT-5.5',
+      },
+      {
+        id: 'gpt-5.4',
+        label: 'GPT-5.4',
+      },
+      {
+        id: 'gpt-5.4-mini',
+        label: 'GPT-5.4 Mini',
+      },
+    ],
+    default_model: 'gpt-5.5',
+    supports_runtime_model_switch: true,
+    file_secrets: [
+      {
+        secret_name: 'CODEX_AUTH_JSON',
+        filename: 'auth.json',
+        env_var: 'CODEX_HOME',
+        subdir: 'codex',
+        env_points_to: 'dir',
+        warn_if_unset: [],
+      },
+    ],
+    binary_name: 'codex-acp',
+    data_dir_env_var: 'CODEX_HOME',
+  },
+  'gemini-cli': {
+    key: 'gemini-cli',
+    display_name: 'Gemini CLI',
+    default_command: ['npx', '-y', '@google/gemini-cli@0.46.0', '--acp'],
+    api_key_env_var: 'GEMINI_API_KEY',
+    base_url_env_var: 'GEMINI_BASE_URL',
+    default_session_mode: 'default',
+    agent_name_patterns: ['gemini-cli'],
+    supports_set_session_model: true,
+    session_meta_key: null,
+    available_models: [
+      {
+        id: 'auto',
+        label: 'Auto',
+      },
+      {
+        id: 'gemini-3.1-pro-preview',
+        label: 'Gemini 3.1 Pro (preview)',
+      },
+      {
+        id: 'gemini-3-pro-preview',
+        label: 'Gemini 3 Pro (preview)',
+      },
+      {
+        id: 'gemini-3-flash-preview',
+        label: 'Gemini 3 Flash (preview)',
+      },
+      {
+        id: 'gemini-3.1-flash-lite',
+        label: 'Gemini 3.1 Flash Lite',
+      },
+      {
+        id: 'gemini-2.5-pro',
+        label: 'Gemini 2.5 Pro',
+      },
+      {
+        id: 'gemini-2.5-flash',
+        label: 'Gemini 2.5 Flash',
+      },
+    ],
+    default_model: 'auto',
+    supports_runtime_model_switch: true,
+    file_secrets: [
+      {
+        secret_name: 'GOOGLE_APPLICATION_CREDENTIALS_JSON',
+        filename: 'gcloud-credentials.json',
+        env_var: 'GOOGLE_APPLICATION_CREDENTIALS',
+        subdir: 'gemini-cli',
+        env_points_to: 'file',
+        warn_if_unset: ['GOOGLE_CLOUD_PROJECT', 'GOOGLE_CLOUD_LOCATION'],
+      },
+    ],
+    binary_name: 'gemini',
+    data_dir_env_var: 'HOME',
+  },
+} as const satisfies Readonly<Record<ACPProviderKey, ACPProviderInfo>>;
+
+export const ACP_PROVIDERS: Readonly<Record<ACPProviderKey, ACPProviderInfo>> = ACP_PROVIDER_DATA;
 
 /**
  * Return the {@link ACPProviderInfo} for `key`, or `null` if unknown.

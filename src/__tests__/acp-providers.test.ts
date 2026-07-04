@@ -1,4 +1,5 @@
 import { ACP_PROVIDERS, getAcpProvider } from '../index';
+import providersJson from '../models/acp-providers.json';
 import type { ACPProviderKey } from '../index';
 
 /**
@@ -16,6 +17,10 @@ describe('ACP provider credential descriptors', () => {
       expect(ACP_PROVIDERS[key]).toBeDefined();
       expect(ACP_PROVIDERS[key].key).toBe(key);
     }
+  });
+
+  it('keeps the runtime registry in sync with the JSON drift-check mirror', () => {
+    expect(ACP_PROVIDERS).toEqual(providersJson);
   });
 
   it('defines the credential descriptor fields on every provider', () => {

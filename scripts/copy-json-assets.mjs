@@ -1,7 +1,5 @@
 // Copy non-TS assets (.json) from src/ to dist/ after tsc runs.
-// tsc does not emit imported JSON files even with resolveJsonModule;
-// without this step, `import x from './acp-providers.json'` resolves at
-// compile time but fails at runtime in the published package.
+// tsc does not emit JSON files that exist as source/package mirrors.
 
 import { copyFile, mkdir, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
