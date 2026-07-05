@@ -14,7 +14,6 @@ import {
   AgentServerVersionError,
   BashClient,
   clearAgentServerInfoCache,
-  CloudProxyClient,
   compareAgentServerVersions,
   ConversationClient,
   FileClient,
@@ -29,6 +28,7 @@ import {
   SettingsClient,
   SharedClient,
   SkillsClient,
+  SubAgentsClient,
   WorkspacesClient,
 } from '../clients';
 import * as http from 'node:http';
@@ -86,6 +86,7 @@ describe('Auxiliary API clients', () => {
 
     expect(manager.server).toBeInstanceOf(ServerClient);
     expect(manager.skills).toBeInstanceOf(SkillsClient);
+    expect(manager.subAgents).toBeInstanceOf(SubAgentsClient);
     expect(manager.profiles).toBeInstanceOf(ProfilesClient);
     expect(manager.agentProfiles).toBeInstanceOf(AgentProfilesClient);
     expect(manager.metaProfiles).toBeInstanceOf(MetaProfilesClient);
@@ -102,7 +103,6 @@ describe('Auxiliary API clients', () => {
     expect(manager.shared).toBeInstanceOf(SharedClient);
     expect(manager.hooks).toBeInstanceOf(HooksClient);
     expect(manager.mcp).toBeInstanceOf(MCPClient);
-    expect(manager.cloudProxy).toBeInstanceOf(CloudProxyClient);
   });
 
   describe('AgentProfilesClient', () => {
@@ -592,6 +592,110 @@ describe('Auxiliary API clients', () => {
     expect(global.fetch).toHaveBeenCalledWith(
       'http://example.com/api/skills/installed/my%20skill',
       expect.objectContaining({ method: 'GET' })
+    );
+  });
+
+  it('SubAgentsClient.getSubAgents POSTs the request to /api/sub-agents', async () => {
+    const payload = {
+      agents: [
+        {
+          name: 'general-purpose',
+          description: 'A general-purpose delegate agent',
+          model: 'inherit',
+          color: null,
+          tools: ['bash', 'str_replace_editor'],
+          skills: [],
+          system_prompt: 'You are a helpful sub-agent.',
+          when_to_use_examples: ['Use for broad research tasks'],
+          permission_mode: null,
+          max_iteration_per_run: null,
+          max_budget_per_run: null,
+          mcp_servers: null,
+          profile_store_dir: null,
+          hooks: null,
+          condenser: null,
+          metadata: {},
+          level: 'builtin',
+          source: null,
+          is_builtin: true,
+        },
+        {
+          name: 'code-explorer',
+          description: 'Explores a codebase',
+          model: 'inherit',
+          color: 'blue',
+          tools: ['bash'],
+          skills: ['grep'],
+          system_prompt: 'Explore the repository.',
+          when_to_use_examples: [],
+          permission_mode: 'confirm_risky',
+          max_iteration_per_run: 25,
+          max_budget_per_run: 1.5,
+          mcp_servers: { fetch: { command: 'uvx', args: ['mcp-server-fetch'] } },
+          profile_store_dir: null,
+          hooks: null,
+          condenser: null,
+          metadata: { team: 'core' },
+          level: 'project',
+          source: '/workspace/.openhands/agents/code-explorer.md',
+          is_builtin: false,
+        },
+      ],
+    };
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const client = new SubAgentsClient({ host: 'http://example.com', apiKey: 'secret' });
+    const request = {
+      load_user: true,
+      load_project: true,
+      load_builtin: false,
+      project_dir: '/workspace',
+    };
+    const response = await client.getSubAgents(request);
+
+    expect(response.agents).toHaveLength(2);
+    expect(response.agents[0].name).toBe('general-purpose');
+    expect(response.agents[0].is_builtin).toBe(true);
+    expect(response.agents[0].level).toBe('builtin');
+    expect(response.agents[1].name).toBe('code-explorer');
+    expect(response.agents[1].level).toBe('project');
+    expect(response.agents[1].mcp_servers).toEqual({
+      fetch: { command: 'uvx', args: ['mcp-server-fetch'] },
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/sub-agents',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify(request),
+        headers: expect.objectContaining({ 'X-Session-API-Key': 'secret' }),
+      })
+    );
+  });
+
+  it('SubAgentsClient.getSubAgents defaults to an empty request body', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ agents: [] }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const client = new SubAgentsClient({ host: 'http://example.com' });
+    const response = await client.getSubAgents();
+
+    expect(response.agents).toEqual([]);
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/sub-agents',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({}),
+      })
     );
   });
 
@@ -1593,6 +1697,116 @@ describe('Auxiliary API clients', () => {
     );
   });
 
+  it('ConversationClient.navigateConversation POSTs event_id and returns the re-rooted info', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ id: 'conversation-1', leaf_event_id: 'event-7' }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const client = new ConversationClient({ host: 'http://example.com' });
+    const info = await client.navigateConversation(
+      'conversation-1',
+      { event_id: 'event-7' },
+      { includeSkills: true }
+    );
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/conversations/conversation-1/navigate?include_skills=true',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ event_id: 'event-7' }),
+      })
+    );
+    // The response carries the new HEAD.
+    expect(info.leaf_event_id).toBe('event-7');
+  });
+
+  it('ConversationClient.navigateConversation selects the empty tree with a null event_id', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ id: 'conversation-1', leaf_event_id: null }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as typeof fetch;
+
+    const client = new ConversationClient({ host: 'http://example.com' });
+    await client.navigateConversation('conversation-1', { event_id: null });
+
+    // No includeSkills option => no query string on the URL.
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/conversations/conversation-1/navigate',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ event_id: null }),
+      })
+    );
+  });
+
+  it('RemoteConversation.navigateTo POSTs to /navigate then refreshes cached state', async () => {
+    // navigateTo posts to the route and then GETs the conversation to refresh
+    // the cache (leaf_event_id is not broadcast over the WebSocket). Two calls
+    // means each needs its own Response (a body can only be read once).
+    global.fetch = jest.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ id: 'conv-123', leaf_event_id: 'event-3' }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      )
+    ) as typeof fetch;
+
+    const agent = new Agent({ llm: { model: 'gpt-4o', api_key: 'k' } });
+    const workspace = new RemoteWorkspace({ host: 'http://example.com', workingDir: '/tmp' });
+    const conversation = new RemoteConversation(agent, workspace, {
+      conversationId: 'conv-123',
+    });
+
+    await conversation.navigateTo('event-3');
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/conversations/conv-123/navigate',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ event_id: 'event-3' }),
+      })
+    );
+    // The trailing refresh re-reads the conversation from the REST API.
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/conversations/conv-123',
+      expect.objectContaining({ method: 'GET' })
+    );
+  });
+
+  it('RemoteConversation.navigateTo passes a null event_id for the empty tree', async () => {
+    // Fresh Response per call: navigateTo posts and then refreshes state.
+    global.fetch = jest.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ id: 'conv-123', leaf_event_id: null }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      )
+    ) as typeof fetch;
+
+    const agent = new Agent({ llm: { model: 'gpt-4o', api_key: 'k' } });
+    const workspace = new RemoteWorkspace({ host: 'http://example.com', workingDir: '/tmp' });
+    const conversation = new RemoteConversation(agent, workspace, {
+      conversationId: 'conv-123',
+    });
+
+    await conversation.navigateTo(null);
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/conversations/conv-123/navigate',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ event_id: null }),
+      })
+    );
+  });
+
   it('ConversationManager.switchProfile posts the profile name', async () => {
     global.fetch = jest.fn().mockResolvedValue(
       new Response(JSON.stringify({ success: true }), {
@@ -2036,15 +2250,13 @@ describe('Auxiliary API clients', () => {
     });
   });
 
-  it('Hooks MCP and CloudProxy clients wrap SDK v1.23.0 endpoints', async () => {
+  it('Hooks and MCP clients wrap SDK v1.23.0 endpoints', async () => {
     const serverInfo = { version: '1.23.0', uptime: 1, idle_time: 0 };
     const responses = [
       serverInfo,
       { hook_config: null },
       serverInfo,
       { ok: true, tools: ['ping'] },
-      serverInfo,
-      { proxied: true },
     ];
     global.fetch = jest.fn().mockImplementation(() => {
       const body = responses.shift();
@@ -2068,13 +2280,6 @@ describe('Auxiliary API clients', () => {
         timeout: 10,
       })
     ).resolves.toEqual({ ok: true, tools: ['ping'] });
-    await expect(
-      new CloudProxyClient(options).forward({
-        host: 'https://app.all-hands.dev',
-        path: '/api/organizations',
-        method: 'GET',
-      })
-    ).resolves.toEqual({ proxied: true });
 
     expect(global.fetch).toHaveBeenNthCalledWith(
       1,
@@ -2098,18 +2303,6 @@ describe('Auxiliary API clients', () => {
         body: JSON.stringify({
           server: { type: 'stdio', command: 'node', args: ['server.js'] },
           timeout: 10,
-        }),
-      })
-    );
-    expect(global.fetch).toHaveBeenNthCalledWith(
-      6,
-      'http://example.com/api/cloud-proxy',
-      expect.objectContaining({
-        method: 'POST',
-        body: JSON.stringify({
-          host: 'https://app.all-hands.dev',
-          path: '/api/organizations',
-          method: 'GET',
         }),
       })
     );

@@ -1,7 +1,6 @@
 export { AgentProfilesClient } from './client/agent-profiles-client';
 export { ServerClient } from './client/server-client';
 export { BashClient } from './client/bash-client';
-export { CloudProxyClient } from './client/cloud-proxy-client';
 export { ConversationClient } from './client/conversation-client';
 export { FileClient } from './client/file-client';
 export { HooksClient } from './client/hooks-client';
@@ -11,6 +10,7 @@ export { ProfilesClient } from './client/profiles-client';
 export { MetaProfilesClient } from './client/meta-profiles-client';
 export { SettingsClient } from './client/settings-client';
 export { SkillsClient } from './client/skills-client';
+export { SubAgentsClient } from './client/sub-agents-client';
 export { PluginsClient } from './client/plugins-client';
 export { ToolClient } from './client/tool-client';
 export { VSCodeClient } from './client/vscode-client';
@@ -30,7 +30,6 @@ export {
 
 export type { ServerClientOptions } from './client/server-client';
 export type { BashClientOptions } from './client/bash-client';
-export type { CloudProxyClientOptions } from './client/cloud-proxy-client';
 export type {
   ConversationClientOptions,
   CreateConversationPayload,
@@ -60,6 +59,7 @@ export type {
   LLMProfileMutationResponse,
 } from './client/settings-client';
 export type { SkillsClientOptions } from './client/skills-client';
+export type { SubAgentsClientOptions } from './client/sub-agents-client';
 export type { PluginsClientOptions } from './client/plugins-client';
 export type { ToolClientOptions } from './client/tool-client';
 export type { VSCodeClientOptions, GetVSCodeUrlOptions } from './client/vscode-client';

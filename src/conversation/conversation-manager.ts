@@ -4,7 +4,6 @@
 
 import { HttpClient } from '../client/http-client';
 import { AgentProfilesClient } from '../client/agent-profiles-client';
-import { CloudProxyClient } from '../client/cloud-proxy-client';
 import { DesktopClient } from '../client/desktop-client';
 import { FileClient } from '../client/file-client';
 import { HooksClient } from '../client/hooks-client';
@@ -16,6 +15,7 @@ import { ServerClient } from '../client/server-client';
 import { SettingsClient } from '../client/settings-client';
 import { SharedClient } from '../client/shared-client';
 import { SkillsClient } from '../client/skills-client';
+import { SubAgentsClient } from '../client/sub-agents-client';
 import { ToolClient } from '../client/tool-client';
 import { VSCodeClient } from '../client/vscode-client';
 import { WorkspacesClient } from '../client/workspaces-client';
@@ -87,6 +87,7 @@ export class ConversationManager {
   public readonly metaProfiles: MetaProfilesClient;
   public readonly settings: SettingsClient;
   public readonly skills: SkillsClient;
+  public readonly subAgents: SubAgentsClient;
   public readonly tools: ToolClient;
   public readonly vscode: VSCodeClient;
   public readonly desktop: DesktopClient;
@@ -95,7 +96,6 @@ export class ConversationManager {
   public readonly shared: SharedClient;
   public readonly hooks: HooksClient;
   public readonly mcp: MCPClient;
-  public readonly cloudProxy: CloudProxyClient;
   public readonly acp: ACPConversationNamespace;
 
   constructor(options: ConversationManagerOptions) {
@@ -120,6 +120,7 @@ export class ConversationManager {
     this.metaProfiles = new MetaProfilesClient(clientOptions);
     this.settings = new SettingsClient(clientOptions);
     this.skills = new SkillsClient(clientOptions);
+    this.subAgents = new SubAgentsClient(clientOptions);
     this.tools = new ToolClient(clientOptions);
     this.vscode = new VSCodeClient(clientOptions);
     this.desktop = new DesktopClient(clientOptions);
@@ -128,7 +129,6 @@ export class ConversationManager {
     this.shared = new SharedClient(clientOptions);
     this.hooks = new HooksClient(clientOptions);
     this.mcp = new MCPClient(clientOptions);
-    this.cloudProxy = new CloudProxyClient(clientOptions);
     this.acp = new ACPConversationNamespace(this);
   }
 
@@ -404,6 +404,7 @@ export class ConversationManager {
     this.metaProfiles.close();
     this.settings.close();
     this.skills.close();
+    this.subAgents.close();
     this.tools.close();
     this.vscode.close();
     this.desktop.close();
@@ -412,7 +413,6 @@ export class ConversationManager {
     this.shared.close();
     this.hooks.close();
     this.mcp.close();
-    this.cloudProxy.close();
     this.client.close();
   }
 }

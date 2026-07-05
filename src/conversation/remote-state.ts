@@ -38,26 +38,30 @@ export class RemoteState {
 
   private async getConversationInfo(): Promise<ConversationInfo> {
     return await this.lock.acquire(async () => {
-      // Return cached state if available and fresh
+      // Return cached state if available and fresh. The cache can be populated
+      // by state-update events that still carry the `full_state` wrapper, so
+      // normalize on the way out here too — this is the single unwrap point.
       if (this.cachedState !== null && Date.now() - this.cachedAt < RemoteState.CACHE_TTL_MS) {
-        return this.cachedState;
+        return this.normalizeFullState(this.cachedState);
       }
 
-      // Fetch from REST API
+      // Fetch from REST API and normalize the `full_state` wrapper once.
       const response = await this.client.get<any>(`/api/conversations/${this.conversationId}`);
-
-      // Handle the case where the API returns a full_state wrapper
-      let conversationInfo: ConversationInfo;
-      if (response.data.full_state) {
-        conversationInfo = response.data.full_state as ConversationInfo;
-      } else {
-        conversationInfo = response.data as ConversationInfo;
-      }
+      const conversationInfo = this.normalizeFullState(response.data);
 
       this.cachedState = conversationInfo;
       this.cachedAt = Date.now();
       return conversationInfo;
     });
+  }
+
+  /**
+   * Unwrap the API's `full_state` wrapper so every accessor receives a flat
+   * ConversationInfo. Centralizing this here means accessors never have to
+   * unwrap themselves.
+   */
+  private normalizeFullState(info: ConversationInfo): ConversationInfo {
+    return ((info as any).full_state ?? info) as ConversationInfo;
   }
 
   /**
@@ -115,22 +119,13 @@ export class RemoteState {
   }
 
   /**
-   * Helper to unwrap full_state if present
-   */
-  private unwrapState(info: ConversationInfo): ConversationInfo {
-    return (info as any).full_state ?? info;
-  }
-
-  /**
    * Get the current execution status of the conversation.
    * This method handles both the new `execution_status` field and the legacy `agent_status` field.
    */
   async getExecutionStatus(): Promise<ConversationExecutionStatus> {
     const info = await this.getConversationInfo();
-    // Handle case where info might still be wrapped in full_state
-    const unwrappedInfo = this.unwrapState(info);
     // Try new field first, fall back to legacy field
-    const statusStr = unwrappedInfo.execution_status ?? unwrappedInfo.agent_status;
+    const statusStr = info.execution_status ?? info.agent_status;
     if (statusStr === undefined || statusStr === null) {
       throw new Error(`execution_status missing in conversation info: ${JSON.stringify(info)}`);
     }
@@ -153,8 +148,7 @@ export class RemoteState {
 
   async getConfirmationPolicy(): Promise<ConfirmationPolicyBase> {
     const info = await this.getConversationInfo();
-    const unwrappedInfo = this.unwrapState(info);
-    const policyData = unwrappedInfo.confirmation_policy;
+    const policyData = info.confirmation_policy;
     if (policyData === undefined || policyData === null) {
       throw new Error(`confirmation_policy missing in conversation info: ${JSON.stringify(info)}`);
     }
@@ -163,14 +157,12 @@ export class RemoteState {
 
   async getActivatedKnowledgeSkills(): Promise<string[]> {
     const info = await this.getConversationInfo();
-    const unwrappedInfo = this.unwrapState(info);
-    return unwrappedInfo.activated_knowledge_skills || [];
+    return info.activated_knowledge_skills || [];
   }
 
   async getAgent(): Promise<AgentBase> {
     const info = await this.getConversationInfo();
-    const unwrappedInfo = this.unwrapState(info);
-    const agentData = unwrappedInfo.agent;
+    const agentData = info.agent;
     if (agentData === undefined || agentData === null) {
       throw new Error(`agent missing in conversation info: ${JSON.stringify(info)}`);
     }
@@ -179,8 +171,7 @@ export class RemoteState {
 
   async getWorkspace(): Promise<any> {
     const info = await this.getConversationInfo();
-    const unwrappedInfo = this.unwrapState(info);
-    const workspace = unwrappedInfo.workspace;
+    const workspace = info.workspace;
     if (workspace === undefined || workspace === null) {
       throw new Error(`workspace missing in conversation info: ${JSON.stringify(info)}`);
     }
@@ -189,8 +180,7 @@ export class RemoteState {
 
   async getPersistenceDir(): Promise<string> {
     const info = await this.getConversationInfo();
-    const unwrappedInfo = this.unwrapState(info);
-    const persistenceDir = unwrappedInfo.persistence_dir;
+    const persistenceDir = info.persistence_dir;
     if (persistenceDir === undefined || persistenceDir === null) {
       throw new Error(`persistence_dir missing in conversation info: ${JSON.stringify(info)}`);
     }
@@ -199,8 +189,7 @@ export class RemoteState {
 
   async modelDump(): Promise<Record<string, any>> {
     const info = await this.getConversationInfo();
-    const unwrappedInfo = this.unwrapState(info);
-    return unwrappedInfo as Record<string, any>;
+    return info as Record<string, any>;
   }
 
   async modelDumpJson(): Promise<string> {
