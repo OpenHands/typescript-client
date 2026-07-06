@@ -37,7 +37,7 @@ jobs:
 
       - name: Resolve agent-server image
         run: |
-          echo "AGENT_SERVER_IMAGE=$(node -p 'require(\"./package.json\").config.agentServerImage')" >> "$GITHUB_ENV"
+          echo "AGENT_SERVER_IMAGE=$(node -p 'require("./package.json").config.agentServerImage')" >> "$GITHUB_ENV"
 
       - name: Build package
         run: npm run build
@@ -167,7 +167,7 @@ jobs:
 
       - name: Resolve agent-server image
         run: |
-          echo "AGENT_SERVER_IMAGE=$(node -p 'require(\"./package.json\").config.agentServerImage')" >> "$GITHUB_ENV"
+          echo "AGENT_SERVER_IMAGE=$(node -p 'require("./package.json").config.agentServerImage')" >> "$GITHUB_ENV"
 
       - name: Build package
         run: npm run build
