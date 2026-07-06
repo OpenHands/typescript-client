@@ -488,18 +488,10 @@ export interface RemoteMCPServerSpec {
 export type MCPTransport = 'stdio' | 'http' | 'sse' | 'streamable-http';
 
 export type MCPOAuthClientAuthMethod =
-  | 'none'
-  | 'client_secret_post'
-  | 'client_secret_basic'
-  | 'private_key_jwt';
+  'none' | 'client_secret_post' | 'client_secret_basic' | 'private_key_jwt';
 
 export type MCPJsonValue =
-  | boolean
-  | number
-  | string
-  | null
-  | MCPJsonValue[]
-  | { [key: string]: MCPJsonValue };
+  boolean | number | string | null | MCPJsonValue[] | { [key: string]: MCPJsonValue };
 
 export interface MCPOAuthAuthentication {
   type: 'oauth';
