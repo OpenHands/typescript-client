@@ -729,10 +729,7 @@ async function fetchAndParse<TResponse>(options: FetchAndParseOptions): Promise<
   } catch (error) {
     // AbortSignal.timeout() aborts with a TimeoutError; some runtimes
     // surface plain AbortError instead.
-    if (
-      error instanceof Error &&
-      (error.name === 'TimeoutError' || error.name === 'AbortError')
-    ) {
+    if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
       throw new Error(`Request timeout after ${options.timeoutMs}ms`, { cause: error });
     }
     throw error;
