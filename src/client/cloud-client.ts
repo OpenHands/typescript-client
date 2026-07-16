@@ -727,7 +727,12 @@ async function fetchAndParse<TResponse>(options: FetchAndParseOptions): Promise<
   try {
     response = await fetch(url, init);
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
+    // AbortSignal.timeout() aborts with a TimeoutError; some runtimes
+    // surface plain AbortError instead.
+    if (
+      error instanceof Error &&
+      (error.name === 'TimeoutError' || error.name === 'AbortError')
+    ) {
       throw new Error(`Request timeout after ${options.timeoutMs}ms`, { cause: error });
     }
     throw error;

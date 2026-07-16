@@ -41,14 +41,19 @@ export interface OpenHandsRequestOptions {
   acceptableStatusCodes?: Set<number>;
   responseType?: ResponseType;
   /**
-   * Optional alternate upstream host. Cloud clients use this for runtime
-   * sandbox calls that must be proxied through an agent-server endpoint.
-   * Agent-server clients use it to target a per-conversation runtime URL.
+   * Optional alternate upstream host. Semantics differ by client kind:
+   * agent-server clients send the request directly to this host (e.g. a
+   * per-conversation runtime URL), while cloud clients route it through
+   * the configured proxy endpoint (`CloudClientOptions.proxy`, default
+   * path `/api/cloud-proxy`) with this host in the proxy envelope.
    */
   hostOverride?: string;
   /**
-   * Overrides the default auth strategy for this request. Agent-server calls
-   * default to `X-Session-API-Key`; cloud app calls default to bearer auth.
+   * Overrides the default auth strategy for this request. `default` uses
+   * the client's own scheme: agent-server clients send the client API key
+   * as `X-Session-API-Key` (they treat `bearer` the same way), while cloud
+   * clients send it as `Authorization: Bearer`. `session-api-key` sends
+   * `sessionApiKey` as `X-Session-API-Key`; `none` sends no auth header.
    */
   authMode?: OpenHandsRequestAuthMode;
   /** API key to use when `authMode` is `session-api-key`. */
