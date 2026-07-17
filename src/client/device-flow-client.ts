@@ -24,7 +24,12 @@ export interface DeviceTokenResponse {
   expires_in?: number;
 }
 
-export interface PollDeviceTokenOptions {
+export interface DeviceFlowRequestOptions {
+  /** Additional metadata headers sent with the device-flow request. */
+  headers?: Readonly<Record<string, string>>;
+}
+
+export interface PollDeviceTokenOptions extends DeviceFlowRequestOptions {
   interval: number;
   timeout?: number;
   signal?: AbortSignal;
@@ -64,7 +69,8 @@ async function requestCloudDeviceEndpoint(
   path: string,
   body: unknown,
   contentType: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  headers?: Readonly<Record<string, string>>
 ): Promise<Response> {
   const requestBody =
     typeof body === 'string' ||
@@ -76,19 +82,24 @@ async function requestCloudDeviceEndpoint(
 
   return fetch(`${normalizeHost(host)}${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': contentType },
+    headers: { ...headers, 'Content-Type': contentType },
     body: requestBody,
     signal,
   });
 }
 
-export async function startDeviceFlow(host: string): Promise<DeviceAuthorizationResponse> {
+export async function startDeviceFlow(
+  host: string,
+  options: DeviceFlowRequestOptions = {}
+): Promise<DeviceAuthorizationResponse> {
   try {
     const response = await requestCloudDeviceEndpoint(
       host,
       '/oauth/device/authorize',
       {},
-      'application/json'
+      'application/json',
+      undefined,
+      options.headers
     );
 
     if (!response.ok) {
@@ -146,7 +157,8 @@ export async function pollForToken(
         '/oauth/device/token',
         body,
         'application/x-www-form-urlencoded',
-        options.signal
+        options.signal,
+        options.headers
       );
 
       if (response.ok) {
