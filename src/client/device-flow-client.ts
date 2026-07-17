@@ -79,10 +79,12 @@ async function requestCloudDeviceEndpoint(
     body instanceof URLSearchParams
       ? body
       : JSON.stringify(body);
+  const requestHeaders = new Headers(headers);
+  requestHeaders.set('Content-Type', contentType);
 
   return fetch(`${normalizeHost(host)}${path}`, {
     method: 'POST',
-    headers: { ...headers, 'Content-Type': contentType },
+    headers: requestHeaders,
     body: requestBody,
     signal,
   });

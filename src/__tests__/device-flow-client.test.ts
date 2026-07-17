@@ -9,6 +9,11 @@ function jsonResponse(body: unknown): Response {
   });
 }
 
+function requestHeadersForCall(callIndex = 0): Headers {
+  const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
+  return new Headers(mockFetch.mock.calls[callIndex]?.[1]?.headers);
+}
+
 describe('device flow request metadata', () => {
   afterEach(() => {
     global.fetch = originalFetch;
@@ -28,18 +33,19 @@ describe('device flow request metadata', () => {
     const client = new CloudClient({ host: 'https://cloud.example.com' });
 
     await client.startDeviceFlow({
-      headers: { 'X-OpenHands-Client': 'agent_canvas' },
+      headers: {
+        'content-type': 'text/plain',
+        'X-OpenHands-Client': 'agent_canvas',
+      },
     });
 
     expect(global.fetch).toHaveBeenCalledWith(
       'https://cloud.example.com/oauth/device/authorize',
-      expect.objectContaining({
-        headers: {
-          'Content-Type': 'application/json',
-          'X-OpenHands-Client': 'agent_canvas',
-        },
-      })
+      expect.objectContaining({ method: 'POST' })
     );
+    const headers = requestHeadersForCall();
+    expect(headers.get('Content-Type')).toBe('application/json');
+    expect(headers.get('X-OpenHands-Client')).toBe('agent_canvas');
   });
 
   it('forwards additional headers while polling for a token', async () => {
@@ -51,17 +57,18 @@ describe('device flow request metadata', () => {
 
     await pollForToken('https://cloud.example.com', 'device-code', {
       interval: 1,
-      headers: { 'X-OpenHands-Client-Version': '1.4.0' },
+      headers: {
+        'CONTENT-TYPE': 'text/plain',
+        'X-OpenHands-Client-Version': '1.4.0',
+      },
     });
 
     expect(global.fetch).toHaveBeenCalledWith(
       'https://cloud.example.com/oauth/device/token',
-      expect.objectContaining({
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-OpenHands-Client-Version': '1.4.0',
-        },
-      })
+      expect.objectContaining({ method: 'POST' })
     );
+    const headers = requestHeadersForCall();
+    expect(headers.get('Content-Type')).toBe('application/x-www-form-urlencoded');
+    expect(headers.get('X-OpenHands-Client-Version')).toBe('1.4.0');
   });
 });
