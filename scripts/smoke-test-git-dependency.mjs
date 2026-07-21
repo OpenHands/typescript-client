@@ -36,12 +36,19 @@ try {
       '--input-type=module',
       '-e',
       [
+        // Root import must load without a JSON import attribute error
+        // (ERR_IMPORT_ATTRIBUTE_MISSING). The barrel transitively loads
+        // `models/acp.js`, which imports `acp-providers.json`; the published
+        // ESM must carry `with { type: 'json' }` on that import. Touching
+        // ACP_PROVIDERS forces that module to actually evaluate.
+        "import { ACP_PROVIDERS } from '@openhands/typescript-client';",
         "import { ServerClient } from '@openhands/typescript-client/clients';",
         "import { HttpClient } from '@openhands/typescript-client/client/http-client';",
         "import { isOpenHandsCloudHost } from '@openhands/typescript-client/client/device-flow-client';",
         "import { RemoteEventsList } from '@openhands/typescript-client/events/remote-events-list';",
         "import { RemoteWorkspace } from '@openhands/typescript-client/workspace/remote-workspace';",
-        'console.log(typeof ServerClient, typeof HttpClient, typeof isOpenHandsCloudHost, typeof RemoteEventsList, typeof RemoteWorkspace);',
+        "if (!ACP_PROVIDERS || typeof ACP_PROVIDERS !== 'object') { throw new Error('ACP_PROVIDERS did not load from the root import'); }",
+        'console.log(typeof ServerClient, typeof HttpClient, typeof isOpenHandsCloudHost, typeof RemoteEventsList, typeof RemoteWorkspace, Object.keys(ACP_PROVIDERS).length);',
       ].join('\n'),
     ],
     {
