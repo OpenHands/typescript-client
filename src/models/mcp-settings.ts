@@ -14,8 +14,6 @@ import type {
 type GeneratedMCPServer = McpServerInputWritable;
 type GeneratedMCPTransport = NonNullable<GeneratedMCPServer['transport']>;
 type GeneratedMCPAuthCredential = NonNullable<GeneratedMCPServer['auth']>;
-type GeneratedMCPEnv = NonNullable<GeneratedMCPServer['env']>;
-type GeneratedMCPHeaders = NonNullable<GeneratedMCPServer['headers']>;
 
 type MCPDisplayFields = Pick<GeneratedMCPServer, 'description' | 'icon' | 'timeout'>;
 type MCPStdioFields = Pick<GeneratedMCPServer, 'args' | 'env' | 'cwd'>;
@@ -47,12 +45,14 @@ export type RemoteMCPServer = MCPDisplayFields &
 export type MCPServer = StdioMCPServer | RemoteMCPServer;
 export type MCPConfig = Record<string, MCPServer>;
 
-type MCPStringMapPatch<Value> = Record<string, Value | null> | null;
+type MergePatchField<Field> = string extends keyof NonNullable<Field>
+  ? NonNullable<Field> extends Record<string, infer Value>
+    ? Record<string, Value | null> | null
+    : Field
+  : Field;
 
-export type MCPServerPatch = Omit<Partial<GeneratedMCPServer>, 'env' | 'headers' | 'auth'> & {
-  env?: MCPStringMapPatch<GeneratedMCPEnv[string]>;
-  headers?: MCPStringMapPatch<GeneratedMCPHeaders[string]>;
-  auth?: MCPAuthCredential | null;
+export type MCPServerPatch = {
+  [Field in keyof GeneratedMCPServer]?: MergePatchField<GeneratedMCPServer[Field]>;
 };
 
 export type MCPConfigPatch = Record<string, MCPServerPatch | null>;
