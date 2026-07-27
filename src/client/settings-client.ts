@@ -20,6 +20,7 @@ import type {
   AgentServerSettingsResponse,
   AgentServerSettingsSchema,
 } from '../models/agent-server-api';
+import type { MCPConfigPatch, MCPServerPatch } from '../models/mcp-settings';
 
 export interface SettingsClientOptions {
   host: string;
@@ -82,6 +83,38 @@ export class SettingsClient {
       request
     );
     return response.data;
+  }
+
+  /**
+   * Add or sparsely update one named MCP server without reading or resending
+   * the rest of the stored catalog.
+   */
+  async patchMcpServer(
+    settingsKey: string,
+    patch: MCPServerPatch
+  ): Promise<AgentServerSettingsPatchResponse> {
+    const mcpConfigPatch = {
+      [settingsKey]: patch,
+    } satisfies MCPConfigPatch;
+    return this.updateSettings({
+      agent_settings_diff: {
+        mcp_config: mcpConfigPatch,
+      },
+    });
+  }
+
+  /**
+   * Delete one named MCP server without altering sibling entries.
+   */
+  async deleteMcpServer(settingsKey: string): Promise<AgentServerSettingsPatchResponse> {
+    const mcpConfigPatch = {
+      [settingsKey]: null,
+    } satisfies MCPConfigPatch;
+    return this.updateSettings({
+      agent_settings_diff: {
+        mcp_config: mcpConfigPatch,
+      },
+    });
   }
 
   async listSecrets(): Promise<SecretsListResponse> {
