@@ -1,5 +1,6 @@
 import type { MCPClient } from '../client/mcp-client';
 import type { SettingsClient } from '../client/settings-client';
+import type { McpServerInputWritable } from '../generated/agent-server-schema';
 import type {
   AgentServerMCPOAuthCallbackRequest,
   AgentServerMCPOAuthCallbackResponse,
@@ -100,5 +101,16 @@ describe('Agent Server generated contract aliases', () => {
 
     expect('auth' in omitted).toBe(false);
     expect(cleared.auth).toBeNull();
+  });
+
+  it('derives every MCP patch field from the generated server contract', () => {
+    assertType<Equal<keyof MCPServerPatch, keyof McpServerInputWritable>>(true);
+    assertType<Equal<MCPServerPatch['env'], Record<string, string | null> | null | undefined>>(
+      true
+    );
+    assertType<Equal<MCPServerPatch['headers'], Record<string, string | null> | null | undefined>>(
+      true
+    );
+    assertType<Equal<MCPServerPatch['auth'], McpServerInputWritable['auth']>>(true);
   });
 });
