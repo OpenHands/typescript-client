@@ -53,6 +53,8 @@
     "build": "tsc && node ./scripts/copy-json-assets.mjs && node ./scripts/rewrite-relative-imports.mjs",
     "generate:agent-server-api": "node ./scripts/generate-agent-server-api.mjs",
     "check:agent-server-api": "npm run generate:agent-server-api && git diff --exit-code -- src/generated/agent-server-schema.ts",
+    "check:public-type-budget": "npm run build --silent && node ./scripts/check-public-type-budget.mjs",
+    "test:public-type-budget": "node ./scripts/check-public-type-budget.mjs --self-test",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "format": "prettier --write \"src/**/*.ts\" \"examples/**/*.ts\" \"scripts/**/*.mjs\"",
