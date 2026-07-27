@@ -183,6 +183,27 @@ const tools = await manager.tools.listTools();
 const acpCount = await manager.acp.countConversations();
 ```
 
+### Updating MCP settings
+
+Persisted MCP servers use their settings-map key as stable identity. Add or
+update one server with a sparse patch instead of fetching and resending the
+whole catalog:
+
+```typescript
+const settings = manager.settings;
+
+await settings.patchMcpServer('github', {
+  url: 'https://example.test/mcp',
+});
+
+await settings.deleteMcpServer('old-server');
+```
+
+An omitted patch field preserves its stored value, including credentials.
+Supplying a value replaces it, and `null` explicitly clears a supported
+optional field or deletes a map entry. Each helper sends one
+`PATCH /api/settings` request.
+
 If you need the lower-level endpoint-specific clients directly, import them from the secondary entrypoint:
 
 ```typescript
