@@ -3,6 +3,7 @@
  */
 
 import { Event, ConversationCallbackType } from '../types/base';
+import { sendWebSocketAuth } from './websocket-auth';
 
 // Use native WebSocket in browser, ws library in Node.js.
 //
@@ -102,16 +103,15 @@ export class WebSocketCallbackClient {
       const wsScheme = url.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = `${wsScheme}//${url.host}${url.pathname.replace(/\/$/, '')}/sockets/events/${this.conversationId}`;
 
-      // Add API key as query parameter if provided
-      const finalUrl = this.apiKey ? `${wsUrl}?session_api_key=${this.apiKey}` : wsUrl;
+      const ws = new WebSocketImpl(wsUrl);
+      this.ws = ws;
 
-      this.ws = new WebSocketImpl(finalUrl);
-
-      this.ws.onopen = () => {
+      ws.onopen = () => {
+        sendWebSocketAuth(ws, this.apiKey);
         this.currentDelay = this.reconnectDelay;
       };
 
-      this.ws.onmessage = (event: { data: any }) => {
+      ws.onmessage = (event: { data: any }) => {
         try {
           const message = typeof event.data === 'string' ? event.data : event.data.toString();
           const eventData: Event = JSON.parse(message);
@@ -125,14 +125,14 @@ export class WebSocketCallbackClient {
         }
       };
 
-      this.ws.onclose = () => {
+      ws.onclose = () => {
         this.ws = undefined;
         if (this.shouldReconnect) {
           this.scheduleReconnect();
         }
       };
 
-      this.ws.onerror = () => {
+      ws.onerror = () => {
         if (this.shouldReconnect) {
           this.scheduleReconnect();
         }

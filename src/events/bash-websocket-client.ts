@@ -4,6 +4,7 @@
 
 import { BashEvent } from '../models/workspace';
 import { ErrorCallbackType } from './websocket-client';
+import { sendWebSocketAuth } from './websocket-auth';
 
 // IMPORTANT: this block must never throw. See the matching note in
 // `events/websocket-client.ts` — the "no WebSocket implementation"
@@ -88,22 +89,20 @@ export class BashWebSocketClient {
       const wsUrl = `${wsScheme}//${url.host}${url.pathname.replace(/\/$/, '')}/sockets/bash-events`;
       const query = new URLSearchParams();
 
-      if (this.apiKey) {
-        query.set('session_api_key', this.apiKey);
-      }
-
       if (this.resendMode) {
         query.set('resend_mode', this.resendMode);
       }
 
       const finalUrl = query.size > 0 ? `${wsUrl}?${query.toString()}` : wsUrl;
-      this.ws = new WebSocketImpl(finalUrl);
+      const ws = new WebSocketImpl(finalUrl);
+      this.ws = ws;
 
-      this.ws.onopen = () => {
+      ws.onopen = () => {
+        sendWebSocketAuth(ws, this.apiKey);
         this.currentDelay = this.reconnectDelay;
       };
 
-      this.ws.onmessage = (event: { data: unknown }) => {
+      ws.onmessage = (event: { data: unknown }) => {
         try {
           const message = typeof event.data === 'string' ? event.data : String(event.data);
           const eventData: BashEvent = JSON.parse(message);
@@ -117,14 +116,14 @@ export class BashWebSocketClient {
         }
       };
 
-      this.ws.onclose = () => {
+      ws.onclose = () => {
         this.ws = undefined;
         if (this.shouldReconnect) {
           this.scheduleReconnect();
         }
       };
 
-      this.ws.onerror = () => {
+      ws.onerror = () => {
         if (this.shouldReconnect) {
           this.scheduleReconnect();
         }
