@@ -389,7 +389,7 @@ export LLM_MODEL="anthropic/claude-sonnet-4-5-20250929"
 # Start agent-server in Docker (software-agent-sdk v1.38.0)
 docker run -d --name agent-server -p 8010:8000 \
   -v /tmp/agent-workspace:/workspace \
-  ghcr.io/openhands/agent-server:1.38.0-python
+  ghcr.io/openhands/agent-server:1.38.0-python --host 0.0.0.0
 
 # Run integration tests
 npm run test:integration

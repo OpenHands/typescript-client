@@ -455,7 +455,7 @@ Integration tests require a running agent-server in Docker with a mounted worksp
      --name agent-server \
      -p 8010:8000 \
      -v /tmp/agent-workspace:/workspace \
-     ghcr.io/openhands/agent-server:1.38.0-python
+     ghcr.io/openhands/agent-server:1.38.0-python --host 0.0.0.0
    ```
 
 3. Wait for the server to be ready:

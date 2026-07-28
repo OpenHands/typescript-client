@@ -43,7 +43,7 @@ jobs:
         run: |
           docker pull "${AGENT_SERVER_IMAGE}"
           docker run -d --name agent-server -p ${AGENT_SERVER_PORT}:8000 \
-            -e LOG_JSON=true "${AGENT_SERVER_IMAGE}"
+            -e LOG_JSON=true "${AGENT_SERVER_IMAGE}" --host 0.0.0.0
           for i in $(seq 1 30); do
             curl -sf http://localhost:${AGENT_SERVER_PORT}/health && break
             echo "waiting for agent-server ($i)..."; sleep 2
