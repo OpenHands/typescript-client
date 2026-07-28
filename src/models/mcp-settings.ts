@@ -6,7 +6,9 @@
  * RFC 7386 mutation semantics expected by client callers.
  */
 import type {
+  McpConfigPatchWritable,
   McpServerInputWritable,
+  McpServerPatchWritable,
   McpoAuthAuthenticationInputWritable,
   McpoAuthStateInputWritable,
 } from '../generated/agent-server-schema';
@@ -44,15 +46,5 @@ export type RemoteMCPServer = MCPDisplayFields &
 
 export type MCPServer = StdioMCPServer | RemoteMCPServer;
 export type MCPConfig = Record<string, MCPServer>;
-
-type MergePatchField<Field> = string extends keyof NonNullable<Field>
-  ? NonNullable<Field> extends Record<string, infer Value>
-    ? Record<string, Value | null> | null
-    : Field
-  : Field;
-
-export type MCPServerPatch = {
-  [Field in keyof GeneratedMCPServer]?: MergePatchField<GeneratedMCPServer[Field]>;
-};
-
-export type MCPConfigPatch = Record<string, MCPServerPatch | null>;
+export type MCPServerPatch = McpServerPatchWritable;
+export type MCPConfigPatch = McpConfigPatchWritable;

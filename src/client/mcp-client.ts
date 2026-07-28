@@ -13,9 +13,7 @@ import type {
   AgentServerMCPTestResponse,
 } from '../models/agent-server-api';
 import type {
-  MCPOAuthCallbackRequest as LegacyMCPOAuthCallbackRequest,
   MCPOAuthStartResponse as LegacyMCPOAuthStartResponse,
-  MCPOAuthStatusResponse as LegacyMCPOAuthStatusResponse,
   MCPTestRequest as LegacyMCPTestRequest,
   MCPTestResponse as LegacyMCPTestResponse,
 } from '../models/api';
@@ -41,13 +39,12 @@ export class MCPClient {
     });
   }
 
+  async testServer(request: AgentServerMCPTestRequest): Promise<AgentServerMCPTestResponse>;
   /**
-   * @deprecated Pass `AgentServerMCPTestRequest` for generated contract
-   * checking. This overload keeps existing callers source compatible while
-   * they migrate.
+   * @deprecated Pass `AgentServerMCPTestRequest`. This overload only keeps
+   * older request payloads source compatible while callers migrate.
    */
   async testServer(request: LegacyMCPTestRequest): Promise<LegacyMCPTestResponse>;
-  async testServer(request: AgentServerMCPTestRequest): Promise<AgentServerMCPTestResponse>;
   async testServer(
     request: LegacyMCPTestRequest | AgentServerMCPTestRequest
   ): Promise<LegacyMCPTestResponse | AgentServerMCPTestResponse> {
@@ -58,15 +55,14 @@ export class MCPClient {
     return response.data;
   }
 
-  /**
-   * @deprecated Pass `AgentServerMCPStartOAuthRequest` for generated contract
-   * checking. This overload keeps existing callers source compatible while
-   * they migrate.
-   */
-  async startOAuth(request: LegacyMCPTestRequest): Promise<LegacyMCPOAuthStartResponse>;
   async startOAuth(
     request: AgentServerMCPStartOAuthRequest
   ): Promise<AgentServerMCPStartOAuthResponse>;
+  /**
+   * @deprecated Pass `AgentServerMCPStartOAuthRequest`. This overload only
+   * keeps older request payloads source compatible while callers migrate.
+   */
+  async startOAuth(request: LegacyMCPTestRequest): Promise<LegacyMCPOAuthStartResponse>;
   async startOAuth(
     request: LegacyMCPTestRequest | AgentServerMCPStartOAuthRequest
   ): Promise<LegacyMCPOAuthStartResponse | AgentServerMCPStartOAuthResponse> {
@@ -81,12 +77,7 @@ export class MCPClient {
     return response.data;
   }
 
-  /** @deprecated Use the generated `AgentServerMCPOAuthStatusResponse`. */
-  async getOAuthStatus(jobId: string): Promise<LegacyMCPOAuthStatusResponse>;
-  async getOAuthStatus(jobId: string): Promise<AgentServerMCPOAuthStatusResponse>;
-  async getOAuthStatus(
-    jobId: string
-  ): Promise<LegacyMCPOAuthStatusResponse | AgentServerMCPOAuthStatusResponse> {
+  async getOAuthStatus(jobId: string): Promise<AgentServerMCPOAuthStatusResponse> {
     await assertAgentServerSupports(this.client, AgentServerFeatureRequirements.mcpOAuth);
     const response = await this.client.get<AgentServerMCPOAuthStatusResponse>(
       `/api/mcp/oauth/status/${encodeURIComponent(jobId)}`
@@ -94,22 +85,10 @@ export class MCPClient {
     return response.data;
   }
 
-  /**
-   * @deprecated Pass `AgentServerMCPOAuthCallbackRequest` and consume
-   * `AgentServerMCPOAuthCallbackResponse` for generated contract checking.
-   */
-  async submitOAuthCallback(
-    jobId: string,
-    request: LegacyMCPOAuthCallbackRequest
-  ): Promise<LegacyMCPOAuthStatusResponse>;
   async submitOAuthCallback(
     jobId: string,
     request: AgentServerMCPOAuthCallbackRequest
-  ): Promise<AgentServerMCPOAuthCallbackResponse>;
-  async submitOAuthCallback(
-    jobId: string,
-    request: LegacyMCPOAuthCallbackRequest | AgentServerMCPOAuthCallbackRequest
-  ): Promise<LegacyMCPOAuthStatusResponse | AgentServerMCPOAuthCallbackResponse> {
+  ): Promise<AgentServerMCPOAuthCallbackResponse> {
     await assertAgentServerSupports(this.client, AgentServerFeatureRequirements.mcpOAuth);
     const response = await this.client.post<AgentServerMCPOAuthCallbackResponse>(
       `/api/mcp/oauth/callback/${encodeURIComponent(jobId)}`,

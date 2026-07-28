@@ -1,6 +1,9 @@
 import type { MCPClient } from '../client/mcp-client';
 import type { SettingsClient } from '../client/settings-client';
-import type { McpServerInputWritable } from '../generated/agent-server-schema';
+import type {
+  McpConfigPatchWritable,
+  McpServerPatchWritable,
+} from '../generated/agent-server-schema';
 import type {
   AgentServerMCPOAuthCallbackRequest,
   AgentServerMCPOAuthCallbackResponse,
@@ -37,6 +40,11 @@ type IsBareUnknown<Value> =
         : false
       : false;
 
+type GeneratedMCPClientContract = {
+  testServer(request: AgentServerMCPTestRequest): Promise<AgentServerMCPTestResponse>;
+  startOAuth(request: AgentServerMCPStartOAuthRequest): Promise<AgentServerMCPStartOAuthResponse>;
+};
+
 function assertType<Type extends true>(_value: Type): void {
   // Compiling this call is the assertion.
 }
@@ -71,16 +79,7 @@ describe('Agent Server generated contract aliases', () => {
   });
 
   it('keeps MCP client methods checked against generated operations', () => {
-    assertType<Equal<Parameters<MCPClient['testServer']>[0], AgentServerMCPTestRequest>>(true);
-    assertType<Equal<Awaited<ReturnType<MCPClient['testServer']>>, AgentServerMCPTestResponse>>(
-      true
-    );
-    assertType<Equal<Parameters<MCPClient['startOAuth']>[0], AgentServerMCPStartOAuthRequest>>(
-      true
-    );
-    assertType<
-      Equal<Awaited<ReturnType<MCPClient['startOAuth']>>, AgentServerMCPStartOAuthResponse>
-    >(true);
+    assertType<MCPClient extends GeneratedMCPClientContract ? true : false>(true);
     assertType<
       Equal<Awaited<ReturnType<MCPClient['getOAuthStatus']>>, AgentServerMCPOAuthStatusResponse>
     >(true);
@@ -104,13 +103,13 @@ describe('Agent Server generated contract aliases', () => {
   });
 
   it('derives every MCP patch field from the generated server contract', () => {
-    assertType<Equal<keyof MCPServerPatch, keyof McpServerInputWritable>>(true);
+    assertType<Equal<MCPServerPatch, McpServerPatchWritable>>(true);
+    assertType<Equal<MCPConfigPatch, McpConfigPatchWritable>>(true);
     assertType<Equal<MCPServerPatch['env'], Record<string, string | null> | null | undefined>>(
       true
     );
     assertType<Equal<MCPServerPatch['headers'], Record<string, string | null> | null | undefined>>(
       true
     );
-    assertType<Equal<MCPServerPatch['auth'], McpServerInputWritable['auth']>>(true);
   });
 });

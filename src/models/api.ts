@@ -480,6 +480,7 @@ export interface RemoteMCPServerSpec {
   type: RemoteMCPServerType;
   url: string;
   headers?: Record<string, string>;
+  /** @deprecated Use the tagged `auth` credential instead. */
   api_key?: string | null;
   auth?: MCPAuthCredential | null;
   timeout?: number | null;
@@ -582,6 +583,7 @@ export interface MCPTestFailure {
 /** @deprecated Use `AgentServerMCPTestResponse`. */
 export type MCPTestResponse = MCPTestSuccess | MCPTestFailure;
 
+/** @deprecated Use `AgentServerMCPStartOAuthResponse`. */
 export interface MCPOAuthStartResponse {
   ok: boolean;
   job_id?: string | null;
@@ -592,6 +594,7 @@ export interface MCPOAuthStartResponse {
 
 export type MCPOAuthProbeStatus = 'pending' | 'authorizing' | 'succeeded' | 'failed';
 
+/** @deprecated Use `AgentServerMCPOAuthStatusResponse`. */
 export interface MCPOAuthStatusResponse {
   ok: boolean;
   status: MCPOAuthProbeStatus;
@@ -605,6 +608,7 @@ export interface MCPOAuthStatusResponse {
   error_kind?: MCPTestFailureKind | null;
 }
 
+/** @deprecated Use `AgentServerMCPOAuthCallbackRequest`. */
 export interface MCPOAuthCallbackRequest {
   callback_url: string;
 }
