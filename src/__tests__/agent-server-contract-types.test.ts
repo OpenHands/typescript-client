@@ -63,6 +63,23 @@ describe('Agent Server generated contract aliases', () => {
     assertType<
       Equal<Awaited<ReturnType<SettingsClient['updateSettings']>>, AgentServerSettingsPatchResponse>
     >(true);
+    assertType<Equal<Parameters<SettingsClient['createMcpServer']>[1], MCPServer>>(true);
+    assertType<Equal<Parameters<SettingsClient['patchMcpServer']>[1], MCPServerPatch>>(true);
+    assertType<
+      Equal<
+        Awaited<ReturnType<SettingsClient['createMcpServer']>>,
+        AgentServerSettingsPatchResponse
+      >
+    >(true);
+    assertType<
+      Equal<Awaited<ReturnType<SettingsClient['patchMcpServer']>>, AgentServerSettingsPatchResponse>
+    >(true);
+    assertType<
+      Equal<
+        Awaited<ReturnType<SettingsClient['deleteMcpServer']>>,
+        AgentServerSettingsPatchResponse
+      >
+    >(true);
   });
 
   it('keeps important MCP contract exports stronger than any or bare unknown', () => {
