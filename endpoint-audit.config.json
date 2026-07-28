@@ -1,18 +1,14 @@
 {
-  "_comment": "Endpoint audit config. REPORT-ONLY: the audit runs on every PR, writes .audit/endpoint-audit.json, and posts a drift report as a PR comment, but does NOT fail CI (gate.mismatch=false). The client is reconciled against the agent-server only: any client call the agent-server does not expose is reported as off-contract. Additional `classify` specs are fetched live purely to label each off-contract call with the backend that actually serves it (e.g. cloud) vs no known backend at all; if a classify spec is unreachable its labels degrade to 'no known backend'. To make this a blocking gate, set gate.mismatch=true. See scripts/endpoint-audit.mjs.",
+  "_comment": "Endpoint audit config. REPORT-ONLY: the audit runs on every PR, writes .audit/endpoint-audit.json, and posts Agent Server contract divergences as a PR comment, but does NOT fail CI. Only handwritten calls intended for Agent Server are compared with the pinned Agent Server OpenAPI document. Clients for other backends must be excluded explicitly. To make either direction blocking, enable the corresponding gate below. See scripts/endpoint-audit.mjs.",
   "specs": [
     {
       "name": "agent-server",
       "role": "gate",
       "url": "http://localhost:8010/openapi.json"
-    },
-    {
-      "name": "cloud",
-      "role": "classify",
-      "url": "https://app.all-hands.dev/openapi.json"
     }
   ],
   "clientGlobs": ["src/client", "src/conversation", "src/workspace"],
+  "excludeClientFiles": ["src/client/cloud-client.ts", "src/client/shared-client.ts"],
 
   "ignoreServerOnly": ["/v1/"],
 
