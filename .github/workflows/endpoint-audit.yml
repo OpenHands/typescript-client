@@ -19,8 +19,6 @@ jobs:
   endpoint-audit:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    env:
-      AGENT_SERVER_PORT: 8010
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -37,21 +35,7 @@ jobs:
       - name: Test endpoint-audit tooling
         run: npm run test:endpoint-audit-tooling
 
-      # Single source of truth: package.json's config.agentServerImage.
-      - name: Resolve agent-server image
-        run: echo "AGENT_SERVER_IMAGE=$(node -p "require('./package.json').config.agentServerImage")" >> "$GITHUB_ENV"
-
-      - name: Start agent-server (ground-truth OpenAPI spec)
-        run: |
-          docker pull "${AGENT_SERVER_IMAGE}"
-          docker run -d --name agent-server -p 127.0.0.1:${AGENT_SERVER_PORT}:8000 \
-            -e LOG_JSON=true "${AGENT_SERVER_IMAGE}" --host 0.0.0.0
-          for i in $(seq 1 30); do
-            curl -sf http://localhost:${AGENT_SERVER_PORT}/health && break
-            echo "waiting for agent-server ($i)..."; sleep 2
-          done
-
-      - name: Endpoint audit (report-only — client vs agent-server drift)
+      - name: Endpoint audit (report-only — client vs pinned release contract)
         run: npm run audit:endpoints
 
       - name: Upload audit report
@@ -71,62 +55,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const fs = require('fs');
-            const reportPath = '.audit/endpoint-audit.json';
-            if (!fs.existsSync(reportPath)) {
-              core.warning(`No audit report at ${reportPath}; skipping PR comment.`);
-              return;
-            }
-            const r = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
-            const list = (items) =>
-              items && items.length ? items.map((i) => `- \`${i}\``).join('\n') : '_none_';
-            const marker = '<!-- endpoint-audit-report -->';
-            const clientOnly = r.clientOnly || r.mismatch || [];
-            const serverOnly = r.serverOnly || r.missingApi || [];
-            const divergenceCount = clientOnly.length + serverOnly.length;
-            const blocking = Boolean(r.gate?.clientOnly || r.gate?.serverOnly);
-            const status = divergenceCount
-              ? `⚠️ ${divergenceCount} Agent Server contract divergence(s)`
-              : '✅ Handwritten Agent Server calls match the pinned contract';
-            const mode = blocking ? 'blocking' : 'report-only';
-            const summary = [
-              '| Category | Count |',
-              '| --- | ---: |',
-              `| Client-only calls | ${clientOnly.length} |`,
-              `| Server-only operations | ${serverOnly.length} |`,
-              `| agent-server endpoints | ${r.agentServer} |`,
-              `| audited handwritten client endpoints | ${r.client} |`,
-            ].join('\n');
-            const body = [
-              marker,
-              '## Endpoint audit',
-              '',
-              `**${status}** · ${mode}`,
-              '',
-              summary,
-              '',
-              `### Client-only — handwritten call absent from Agent Server (${clientOnly.length})`,
-              '',
-              list(clientOnly),
-              '',
-              `### Server-only — Agent Server operation has no handwritten call (${serverOnly.length})`,
-              '',
-              list(serverOnly),
-            ].join('\n');
-            const { owner, repo } = context.repo;
-            const issue_number = context.issue.number;
-            const comments = await github.paginate(github.rest.issues.listComments, {
-              owner,
-              repo,
-              issue_number,
-            });
-            const existing = comments.find((c) => c.body && c.body.includes(marker));
-            if (existing) {
-              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
-            } else {
-              await github.rest.issues.createComment({ owner, repo, issue_number, body });
-            }
-
-      - name: Stop agent-server
-        if: always()
-        run: docker rm -f agent-server || true
+            const { postEndpointAuditReport } = require(
+              './.github/scripts/post-endpoint-audit-report.cjs'
+            );
+            await postEndpointAuditReport({ github, context, core });

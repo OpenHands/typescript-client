@@ -14,6 +14,9 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import ts from 'typescript';
+
+import { loadPinnedAgentServerOpenApi } from './agent-server-openapi.mjs';
 
 const ROOT = process.cwd();
 const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'endpoint-audit.config.json'), 'utf8'));
@@ -33,10 +36,14 @@ const norm = (verb, p) =>
 // 1. Agent Server contract
 // ---------------------------------------------------------------------------
 async function loadSpec(spec) {
+  if (spec.source === 'pinned-agent-server-release') {
+    const result = await loadPinnedAgentServerOpenApi({ repositoryRoot: ROOT });
+    return { doc: result.schema, source: result.source };
+  }
   if (spec.url) {
     try {
       const res = await fetch(spec.url, { signal: AbortSignal.timeout(8000) });
-      if (res.ok) return await res.json();
+      if (res.ok) return { doc: await res.json(), source: spec.url };
       console.warn(`  ! ${spec.name}: ${spec.url} -> HTTP ${res.status}, falling back to file`);
     } catch (e) {
       console.warn(
@@ -45,7 +52,10 @@ async function loadSpec(spec) {
     }
   }
   if (spec.file && fs.existsSync(path.join(ROOT, spec.file)))
-    return JSON.parse(fs.readFileSync(path.join(ROOT, spec.file), 'utf8'));
+    return {
+      doc: JSON.parse(fs.readFileSync(path.join(ROOT, spec.file), 'utf8')),
+      source: path.join(ROOT, spec.file),
+    };
   throw new Error(`spec "${spec.name}": no reachable url and no fallback file`);
 }
 
@@ -57,8 +67,10 @@ const specToSet = (doc) => {
 };
 
 const contract = new Set();
+const contractSources = [];
 for (const spec of cfg.specs) {
-  const doc = await loadSpec(spec);
+  const { doc, source } = await loadSpec(spec);
+  contractSources.push(source);
   for (const endpoint of specToSet(doc)) contract.add(endpoint);
 }
 
@@ -77,33 +89,85 @@ function walk(dir) {
   return out;
 }
 
-const VERB_CALL = /\.(get|post|put|patch|delete)\s*(<[^>]*>)?\(/;
-const PATH_LIT = /[`'"](\/(?:api|server_info|alive|health|ready)[^`'"]*)[`'"]/;
 const excludedClientFiles = new Set(
   (cfg.excludeClientFiles ?? []).map((file) => path.normalize(file))
 );
+
+function pathFromExpression(expression) {
+  if (ts.isStringLiteral(expression) || ts.isNoSubstitutionTemplateLiteral(expression)) {
+    return expression.text;
+  }
+  if (ts.isTemplateExpression(expression)) {
+    return (
+      expression.head.text +
+      expression.templateSpans.map((span) => `{}` + span.literal.text).join('')
+    );
+  }
+}
+
+function objectProperty(object, name) {
+  return object.properties.find(
+    (property) =>
+      ts.isPropertyAssignment(property) &&
+      ((ts.isIdentifier(property.name) && property.name.text === name) ||
+        (ts.isStringLiteral(property.name) && property.name.text === name))
+  );
+}
+
+function extractEndpoints(file) {
+  const source = ts.createSourceFile(
+    file,
+    fs.readFileSync(file, 'utf8'),
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS
+  );
+  const endpoints = [];
+
+  function visit(node) {
+    if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
+      const method = node.expression.name.text.toLowerCase();
+      let verb;
+      let endpointPath;
+
+      if (VERBS.includes(method)) {
+        verb = method;
+        endpointPath = node.arguments[0] && pathFromExpression(node.arguments[0]);
+      } else if (
+        method === 'request' &&
+        node.arguments[0] &&
+        ts.isObjectLiteralExpression(node.arguments[0])
+      ) {
+        const options = node.arguments[0];
+        const methodProperty = objectProperty(options, 'method');
+        const urlProperty = objectProperty(options, 'url');
+        if (methodProperty && urlProperty) {
+          verb = pathFromExpression(methodProperty.initializer)?.toLowerCase();
+          endpointPath = pathFromExpression(urlProperty.initializer);
+        }
+      }
+
+      if (
+        verb &&
+        VERBS.includes(verb) &&
+        endpointPath &&
+        /^(?:\/$|\/(?:api|server_info|alive|health|ready)(?:\/|$))/.test(endpointPath)
+      ) {
+        endpoints.push(norm(verb, endpointPath));
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  visit(source);
+  return endpoints;
+}
 
 const client = new Set();
 for (const glob of cfg.clientGlobs) {
   for (const file of walk(path.join(ROOT, glob))) {
     if (excludedClientFiles.has(path.normalize(path.relative(ROOT, file)))) continue;
-    const lines = fs.readFileSync(file, 'utf8').split('\n');
-    lines.forEach((ln, i) => {
-      // direct `.get/post/...(` calls, plus generic `.request({ method, url })`
-      let verb = ln.match(VERB_CALL)?.[1];
-      let win = 3;
-      if (!verb && /\.request\s*\(/.test(ln)) {
-        const block = lines.slice(i, i + 6).join('\n');
-        verb = block.match(/method:\s*['"`](GET|POST|PUT|PATCH|DELETE)['"`]/i)?.[1];
-        win = 6;
-      }
-      if (!verb) return;
-      const p = lines
-        .slice(i, i + win)
-        .join('\n')
-        .match(PATH_LIT)?.[1];
-      if (p) client.add(norm(verb, p));
-    });
+    for (const endpoint of extractEndpoints(file)) client.add(endpoint);
   }
 }
 
@@ -112,9 +176,22 @@ for (const glob of cfg.clientGlobs) {
 // ---------------------------------------------------------------------------
 const sorted = (it) => [...it].sort();
 const ignoredApi = (k) => (cfg.ignoreServerOnly ?? []).some((pre) => k.includes(pre));
+const flattenExceptions = (groups) =>
+  (groups ?? []).flatMap(({ endpoints, ...metadata }) =>
+    endpoints.map((endpoint) => ({ endpoint, ...metadata }))
+  );
 
-const clientOnly = sorted([...client].filter((k) => !contract.has(k)));
-const serverOnly = sorted([...contract].filter((k) => !client.has(k) && !ignoredApi(k)));
+const allowedClientOnly = flattenExceptions(cfg.allowClientOnly);
+const explicitlyCoveredServerOperations = flattenExceptions(cfg.coveredServerOperations);
+const allowedClientOnlySet = new Set(allowedClientOnly.map(({ endpoint }) => endpoint));
+const coveredServerSet = new Set(explicitlyCoveredServerOperations.map(({ endpoint }) => endpoint));
+
+const clientOnly = sorted(
+  [...client].filter((k) => !contract.has(k) && !allowedClientOnlySet.has(k))
+);
+const serverOnly = sorted(
+  [...contract].filter((k) => !client.has(k) && !coveredServerSet.has(k) && !ignoredApi(k))
+);
 
 // ---------------------------------------------------------------------------
 // 4. Report
@@ -137,9 +214,12 @@ fs.writeFileSync(
     {
       agentServer: contract.size,
       client: client.size,
+      contractSources,
       excludedClientFiles: sorted(excludedClientFiles),
       clientOnly,
       serverOnly,
+      allowedClientOnly,
+      explicitlyCoveredServerOperations,
       // Backward-compatible field names for existing artifact consumers.
       mismatch: clientOnly,
       missingApi: serverOnly,
