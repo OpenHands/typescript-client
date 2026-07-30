@@ -5,7 +5,23 @@
  * structured events for all conversation activities.
  */
 
-import { Message, MessageContent, Event } from '../types/base';
+import { Message, MessageContent, TextContent, Event } from '../types/base';
+
+/** Serialized SDK tool call attached to an ActionEvent. */
+export interface MessageToolCall {
+  id: string;
+  name: string;
+  arguments: string;
+}
+
+/** SDK tool definition serialized with SystemPromptEvent. */
+export interface ToolDefinition {
+  name: string;
+  description: string;
+  [key: string]: unknown;
+}
+
+export type SecurityRisk = 'UNKNOWN' | 'LOW' | 'MEDIUM' | 'HIGH';
 
 /**
  * Event ID type - unique identifier for events
@@ -30,6 +46,7 @@ export interface BaseEvent extends Event {
   timestamp: string;
   /** Source of the event */
   source?: EventSource;
+  parent_id?: EventID | null;
 }
 
 /**
@@ -41,6 +58,9 @@ export interface MessageEvent extends BaseEvent {
   llm_message: Message;
   /** List of activated skills for this message */
   activated_skills?: string[];
+  extended_content?: TextContent[];
+  llm_response_id?: EventID | null;
+  critic_result?: unknown | null;
   /** Optional sender identifier */
   sender?: string;
 }
@@ -55,11 +75,18 @@ export interface ActionEvent extends BaseEvent {
   /** Tool call ID for correlation */
   tool_call_id: string;
   /** The action parameters/arguments */
-  action: Record<string, unknown>;
+  action: Record<string, unknown> | null;
   /** Agent's reasoning/thought for this action */
-  thought?: string;
+  thought: TextContent[];
+  reasoning_content?: string | null;
+  thinking_blocks: unknown[];
+  responses_reasoning_item?: unknown | null;
+  tool_call: MessageToolCall;
   /** LLM response ID that generated this action */
-  llm_response_id?: string;
+  llm_response_id: EventID;
+  security_risk: SecurityRisk;
+  critic_result?: unknown | null;
+  summary?: string | null;
 }
 
 /**
@@ -75,6 +102,7 @@ export interface ObservationEvent extends BaseEvent {
   observation: unknown;
   /** ID of the action this observation corresponds to */
   action_id: string;
+  extended_content?: TextContent[];
 }
 
 /** Safe, provider-neutral semantics for an SDK failure. */
@@ -108,6 +136,31 @@ export interface AgentErrorEvent extends BaseEvent {
   classification?: ErrorClassification | null;
 }
 
+export type ACPToolKind = 'execute' | 'edit' | 'read' | 'fetch' | 'other';
+export type ACPToolCallStatus = 'pending' | 'in_progress' | 'completed' | 'failed';
+
+/** SDK event for a tool call made by an ACP subprocess. */
+export interface ACPToolCallEvent extends BaseEvent {
+  kind: 'ACPToolCallEvent';
+  source: 'agent';
+  tool_call_id: string;
+  title: string;
+  status: ACPToolCallStatus | null;
+  tool_kind: ACPToolKind | null;
+  raw_input: unknown | null;
+  raw_output: unknown | null;
+  content: unknown[] | null;
+  is_error: boolean;
+}
+
+/** Transient token delta emitted by the SDK over the event WebSocket. */
+export interface StreamingDeltaEvent extends BaseEvent {
+  kind: 'StreamingDeltaEvent';
+  source: 'agent';
+  content: string | null;
+  reasoning_content: string | null;
+}
+
 /**
  * System prompt event - system prompt sent to LLM
  */
@@ -116,7 +169,8 @@ export interface SystemPromptEvent extends BaseEvent {
   /** The system prompt content */
   system_prompt: MessageContent;
   /** Tools available to the agent */
-  tools: unknown[];
+  tools: ToolDefinition[];
+  dynamic_context?: TextContent | null;
 }
 
 /**
@@ -124,6 +178,7 @@ export interface SystemPromptEvent extends BaseEvent {
  */
 export interface PauseEvent extends BaseEvent {
   kind: 'PauseEvent';
+  source: 'user';
   /** Reason for pausing */
   reason?: string;
 }
@@ -133,6 +188,7 @@ export interface PauseEvent extends BaseEvent {
  */
 export interface CondensationRequestEvent extends BaseEvent {
   kind: 'CondensationRequest';
+  source: 'environment';
 }
 
 /**
@@ -141,6 +197,7 @@ export interface CondensationRequestEvent extends BaseEvent {
  */
 export interface CondensationSummaryEvent extends BaseEvent {
   kind: 'CondensationSummaryEvent';
+  source: 'environment';
   /** The summary text of the condensed events */
   summary: string;
 }
@@ -152,6 +209,7 @@ export interface CondensationSummaryEvent extends BaseEvent {
  */
 export interface CondensationEvent extends BaseEvent {
   kind: 'Condensation';
+  source: 'environment';
   /** IDs of events that were removed from context */
   forgotten_event_ids: string[];
   /** Summary of the forgotten events, if generated */
@@ -189,8 +247,7 @@ export interface UserRejectObservation extends BaseEvent {
   action_id: string;
   /** Reason for rejection */
   rejection_reason: string;
-  /** Source of the rejection */
-  rejection_source: 'user' | 'system';
+  rejection_source?: 'user' | 'hook';
 }
 
 /**
@@ -352,6 +409,8 @@ export type ConversationEvent =
   | ActionEvent
   | ObservationEvent
   | AgentErrorEvent
+  | ACPToolCallEvent
+  | StreamingDeltaEvent
   | SystemPromptEvent
   | PauseEvent
   | CondensationRequestEvent
