@@ -77,14 +77,14 @@ export interface ActionEvent extends BaseEvent {
   /** The action parameters/arguments */
   action: Record<string, unknown> | null;
   /** Agent's reasoning/thought for this action */
-  thought: TextContent[];
+  thought?: TextContent[] | string;
   reasoning_content?: string | null;
-  thinking_blocks: unknown[];
+  thinking_blocks?: unknown[];
   responses_reasoning_item?: unknown | null;
-  tool_call: MessageToolCall;
+  tool_call?: MessageToolCall;
   /** LLM response ID that generated this action */
-  llm_response_id: EventID;
-  security_risk: SecurityRisk;
+  llm_response_id?: EventID;
+  security_risk?: SecurityRisk;
   critic_result?: unknown | null;
   summary?: string | null;
 }
