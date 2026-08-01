@@ -7,6 +7,7 @@
 
 // Main conversation and workspace classes
 export { RemoteConversation } from './conversation/remote-conversation';
+export { LocalConversation } from './conversation/local-conversation';
 export {
   Conversation,
   createConversation,
@@ -20,6 +21,10 @@ export { RemoteState } from './conversation/remote-state';
 export { RemoteEventsList } from './events/remote-events-list';
 export type { EventSearchOptions, RemoteEventsListOptions } from './events/remote-events-list';
 
+// Stuck Detection
+export { StuckDetector, DEFAULT_STUCK_THRESHOLDS } from './conversation/stuck-detector';
+export type { StuckDetectionThresholds, StuckDetectionResult } from './conversation/stuck-detector';
+
 // Secret Registry
 export {
   SecretRegistry,
@@ -28,8 +33,34 @@ export {
 } from './conversation/secret-registry';
 export type { SecretSource, SecretSourceKind } from './conversation/secret-registry';
 
+// Security (Confirmation Policy & Security Analyzer)
+export {
+  NeverConfirm,
+  AlwaysConfirm,
+  RiskBasedConfirm,
+  ToolBasedConfirm,
+  CompositeConfirm,
+  createConfirmationPolicy,
+} from './security/confirmation-policy';
+export type {
+  RiskLevel,
+  SecurityAnalysisResult,
+  ConfirmationPolicy,
+} from './security/confirmation-policy';
+
+export {
+  PatternBasedAnalyzer,
+  AllowlistAnalyzer,
+  NoOpAnalyzer,
+  CompositeAnalyzer,
+  createSecurityAnalyzer,
+} from './security/security-analyzer';
+export type { SecurityAnalyzer } from './security/security-analyzer';
+
 // Rich Event Types
 export {
+  generateEventId,
+  createBaseEvent,
   isMessageEvent,
   isActionEvent,
   isObservationEvent,
@@ -40,12 +71,17 @@ export {
   isHookExecutionEvent,
 } from './events/types';
 export type {
+  EventID,
+  EventSource,
+  BaseEvent,
   ErrorClassification,
   MessageEvent,
   ActionEvent,
   ObservationEvent,
   AgentErrorEvent,
   ACPToolCallEvent,
+  ACPToolCallStatus,
+  ACPToolKind,
   StreamingDeltaEvent,
   SystemPromptEvent,
   PauseEvent,
@@ -56,8 +92,14 @@ export type {
   ConversationErrorEvent,
   LLMCompletionLogEvent,
   UserRejectObservation,
+  ConfirmationRequestEvent,
+  ConfirmationResponseEvent,
   TokenEvent,
+  StuckDetectionEvent,
+  FinishEvent,
+  ThinkEvent,
   HookExecutionEvent,
+  HookExecutionEventType,
   ConversationEvent,
 } from './events/types';
 
@@ -380,9 +422,17 @@ export type { WebSocketClientOptions } from './events/websocket-client';
 
 export type { RemoteWorkspaceOptions } from './workspace/remote-workspace';
 
+export type { LocalWorkspaceOptions } from './workspace/local-workspace';
+
 export type { WorkspaceOptions, CreateWorkspaceOptions } from './workspace/workspace';
 
 export type { RemoteConversationOptions } from './conversation/remote-conversation';
+
+export type {
+  LocalConversationOptions,
+  ToolExecutor,
+  ConversationTokenCallback,
+} from './conversation/local-conversation';
 
 export type { ConversationOptions, CreateConversationOptions } from './conversation/conversation';
 
@@ -413,6 +463,7 @@ export type { SystemPromptOptions } from './prompts';
 
 // Re-import for default export
 import { RemoteConversation } from './conversation/remote-conversation';
+import { LocalConversation } from './conversation/local-conversation';
 import {
   Conversation,
   createConversation,
@@ -420,6 +471,7 @@ import {
 } from './conversation/conversation';
 import { ConversationManager } from './conversation/conversation-manager';
 import { RemoteWorkspace } from './workspace/remote-workspace';
+import { LocalWorkspace } from './workspace/local-workspace';
 import { Workspace, createWorkspace, createWorkspaceAuto } from './workspace/workspace';
 import { RemoteState } from './conversation/remote-state';
 import { RemoteEventsList } from './events/remote-events-list';
@@ -464,11 +516,13 @@ import {
 // Default export for convenience
 export default {
   RemoteConversation,
+  LocalConversation,
   Conversation,
   createConversation,
   createConversationAuto,
   ConversationManager,
   RemoteWorkspace,
+  LocalWorkspace,
   Workspace,
   createWorkspace,
   createWorkspaceAuto,
