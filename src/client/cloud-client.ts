@@ -165,12 +165,7 @@ export interface CloudSuggestedTask {
 }
 
 export type CloudConversationObservabilityMetadataValue =
-  | string
-  | number
-  | boolean
-  | string[]
-  | number[]
-  | boolean[];
+  string | number | boolean | string[] | number[] | boolean[];
 
 export type CloudConversationObservabilityMetadata = Record<
   string,
