@@ -6,17 +6,10 @@
  */
 
 import { Message, MessageContent, TextContent, Event } from '../types/base';
+import type { MessageToolCall as AgentServerMessageToolCall } from '../generated/agent-server-schema';
 
 /** Serialized SDK tool call attached to an ActionEvent. */
-export interface MessageToolCall {
-  id: string;
-  name: string;
-  arguments: string;
-  /** Originating API family. */
-  origin: 'completion' | 'responses';
-  /** Original Responses function-call item ID, when applicable. */
-  responses_item_id?: string | null;
-}
+export type MessageToolCall = AgentServerMessageToolCall;
 
 /** SDK tool definition serialized with SystemPromptEvent. */
 export interface ToolDefinition {
