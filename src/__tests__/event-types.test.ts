@@ -56,7 +56,7 @@ describe('Event Type Guards', () => {
         action: {},
         thought: [],
         thinking_blocks: [],
-        tool_call: { id: 'call_1', name: 'test', arguments: '{}' },
+        tool_call: { id: 'call_1', name: 'test', arguments: '{}', origin: 'completion' },
         llm_response_id: 'response_1',
         security_risk: 'UNKNOWN',
       };
@@ -77,7 +77,7 @@ describe('Event Type Guards', () => {
         action: { command: 'ls' },
         thought: [{ type: 'text', text: 'Running ls command' }],
         thinking_blocks: [],
-        tool_call: { id: 'call_1', name: 'terminal', arguments: '{}' },
+        tool_call: { id: 'call_1', name: 'terminal', arguments: '{}', origin: 'completion' },
         llm_response_id: 'response_1',
         security_risk: 'UNKNOWN',
       };
@@ -339,7 +339,7 @@ describe('Event Structure', () => {
         },
         thought: [{ type: 'text', text: 'I need to list the workspace files' }],
         thinking_blocks: [],
-        tool_call: { id: 'call_123', name: 'terminal', arguments: '{}' },
+        tool_call: { id: 'call_123', name: 'terminal', arguments: '{}', origin: 'completion' },
         llm_response_id: 'response_1',
         security_risk: 'UNKNOWN',
       };

@@ -12,6 +12,10 @@ export interface MessageToolCall {
   id: string;
   name: string;
   arguments: string;
+  /** Originating API family. */
+  origin: "completion" | "responses";
+  /** Original Responses function-call item ID, when applicable. */
+  responses_item_id?: string | null;
 }
 
 /** SDK tool definition serialized with SystemPromptEvent. */
