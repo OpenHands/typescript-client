@@ -164,4 +164,4 @@ export interface IConversation {
  * Type discriminator for conversation types.
  * Useful for runtime type checking and factory patterns.
  */
-export type ConversationType = 'local' | 'remote';
+export type ConversationType = 'remote';
