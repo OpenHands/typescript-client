@@ -151,4 +151,4 @@ export interface IWorkspace {
  * Type discriminator for workspace types.
  * Useful for runtime type checking and factory patterns.
  */
-export type WorkspaceType = 'remote';
+export type WorkspaceType = 'local' | 'remote';

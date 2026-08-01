@@ -14,6 +14,7 @@ export {
 } from './conversation/conversation';
 export { ConversationManager } from './conversation/conversation-manager';
 export { RemoteWorkspace } from './workspace/remote-workspace';
+export { LocalWorkspace } from './workspace/local-workspace';
 export { Workspace, createWorkspace, createWorkspaceAuto } from './workspace/workspace';
 export { RemoteState } from './conversation/remote-state';
 export { RemoteEventsList } from './events/remote-events-list';
@@ -85,6 +86,14 @@ export { Agent } from './agent/agent';
 
 // LLM classes and factory functions
 export { LLM, OpenRouterLLM, createLLM, createOpenRouterLLM } from './llm';
+
+// Prompts
+export {
+  DEFAULT_SYSTEM_PROMPT,
+  MINIMAL_SYSTEM_PROMPT,
+  TOOL_DESCRIPTIONS,
+  generateSystemPrompt,
+} from './prompts';
 
 // WebSocket client for real-time events
 export { WebSocketCallbackClient } from './events/websocket-client';
@@ -398,6 +407,9 @@ export type {
   TokenStreamEvent,
 } from './llm';
 export type { OpenRouterLLMOptions, LLMOptions, CreateLLMOptions } from './llm';
+
+// Prompt types
+export type { SystemPromptOptions } from './prompts';
 
 // Re-import for default export
 import { RemoteConversation } from './conversation/remote-conversation';
