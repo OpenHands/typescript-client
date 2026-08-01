@@ -158,4 +158,3 @@ npm run preview
 - [OpenRouter Documentation](https://openrouter.ai/docs)
 - [OpenHands TypeScript SDK](../../README.md)
 - [Model Pricing](https://openrouter.ai/models)
-- [Local Agent Example](../local-agent/) - Agent with tool calling
