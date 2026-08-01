@@ -13,7 +13,7 @@ export interface MessageToolCall {
   name: string;
   arguments: string;
   /** Originating API family. */
-  origin: "completion" | "responses";
+  origin: 'completion' | 'responses';
   /** Original Responses function-call item ID, when applicable. */
   responses_item_id?: string | null;
 }
