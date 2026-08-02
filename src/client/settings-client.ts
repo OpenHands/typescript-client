@@ -20,7 +20,7 @@ import type {
   AgentServerSettingsResponse,
   AgentServerSettingsSchema,
 } from '../models/agent-server-api';
-import type { MCPConfigPatch, MCPServerPatch } from '../models/mcp-settings';
+import type { MCPServer, MCPServerPatch } from '../models/mcp-settings';
 
 export interface SettingsClientOptions {
   host: string;
@@ -85,36 +85,36 @@ export class SettingsClient {
     return response.data;
   }
 
-  /**
-   * Add or sparsely update one named MCP server without reading or resending
-   * the rest of the stored catalog.
-   */
+  /** Create one named MCP server without reading or resending the catalog. */
+  async createMcpServer(
+    settingsKey: string,
+    server: MCPServer
+  ): Promise<AgentServerSettingsPatchResponse> {
+    const response = await this.client.post<AgentServerSettingsPatchResponse>(
+      `/api/settings/mcp/${encodeURIComponent(settingsKey)}`,
+      server
+    );
+    return response.data;
+  }
+
+  /** Sparsely update one existing named MCP server. */
   async patchMcpServer(
     settingsKey: string,
     patch: MCPServerPatch
   ): Promise<AgentServerSettingsPatchResponse> {
-    const mcpConfigPatch = {
-      [settingsKey]: patch,
-    } satisfies MCPConfigPatch;
-    return this.updateSettings({
-      agent_settings_diff: {
-        mcp_config: mcpConfigPatch,
-      },
-    });
+    const response = await this.client.patch<AgentServerSettingsPatchResponse>(
+      `/api/settings/mcp/${encodeURIComponent(settingsKey)}`,
+      patch
+    );
+    return response.data;
   }
 
-  /**
-   * Delete one named MCP server without altering sibling entries.
-   */
+  /** Delete one existing named MCP server. */
   async deleteMcpServer(settingsKey: string): Promise<AgentServerSettingsPatchResponse> {
-    const mcpConfigPatch = {
-      [settingsKey]: null,
-    } satisfies MCPConfigPatch;
-    return this.updateSettings({
-      agent_settings_diff: {
-        mcp_config: mcpConfigPatch,
-      },
-    });
+    const response = await this.client.delete<AgentServerSettingsPatchResponse>(
+      `/api/settings/mcp/${encodeURIComponent(settingsKey)}`
+    );
+    return response.data;
   }
 
   async listSecrets(): Promise<SecretsListResponse> {

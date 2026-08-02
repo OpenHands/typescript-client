@@ -9,6 +9,10 @@ import {
   ActionEvent,
   ObservationEvent,
   AgentErrorEvent,
+  ACPToolCallEvent,
+  StreamingDeltaEvent,
+  ConversationErrorEvent,
+  ErrorClassification,
   SystemPromptEvent,
   PauseEvent,
   CondensationRequestEvent,
@@ -46,10 +50,15 @@ describe('Event Type Guards', () => {
         id: generateEventId(),
         kind: 'ActionEvent',
         timestamp: new Date().toISOString(),
-        source: 'agent',
+        source: 'environment',
         tool_name: 'test',
         tool_call_id: 'call_1',
         action: {},
+        thought: [],
+        thinking_blocks: [],
+        tool_call: { id: 'call_1', name: 'test', arguments: '{}', origin: 'completion' },
+        llm_response_id: 'response_1',
+        security_risk: 'UNKNOWN',
       };
 
       expect(isMessageEvent(event)).toBe(false);
@@ -62,11 +71,15 @@ describe('Event Type Guards', () => {
         id: generateEventId(),
         kind: 'ActionEvent',
         timestamp: new Date().toISOString(),
-        source: 'agent',
+        source: 'environment',
         tool_name: 'terminal',
         tool_call_id: 'call_1',
         action: { command: 'ls' },
-        thought: 'Running ls command',
+        thought: [{ type: 'text', text: 'Running ls command' }],
+        thinking_blocks: [],
+        tool_call: { id: 'call_1', name: 'terminal', arguments: '{}', origin: 'completion' },
+        llm_response_id: 'response_1',
+        security_risk: 'UNKNOWN',
       };
 
       expect(isActionEvent(event)).toBe(true);
@@ -121,6 +134,62 @@ describe('Event Type Guards', () => {
     });
   });
 
+  it('models optional SDK error classification on both error events', () => {
+    const classification: ErrorClassification = {
+      kind: 'auth',
+      retryable: false,
+      user_action: 'settings',
+    };
+    const agentError: AgentErrorEvent = {
+      id: generateEventId(),
+      kind: 'AgentErrorEvent',
+      timestamp: new Date().toISOString(),
+      tool_name: 'terminal',
+      tool_call_id: 'call_1',
+      error: 'redacted',
+      classification,
+    };
+    const conversationError: ConversationErrorEvent = {
+      id: generateEventId(),
+      kind: 'ConversationErrorEvent',
+      timestamp: new Date().toISOString(),
+      code: 'OpenAIError',
+      detail: 'redacted',
+      classification,
+    };
+
+    expect(agentError.classification?.kind).toBe('auth');
+    expect(conversationError.classification?.user_action).toBe('settings');
+  });
+
+  it('models SDK-only ACP and streaming events', () => {
+    const acp: ACPToolCallEvent = {
+      id: generateEventId(),
+      kind: 'ACPToolCallEvent',
+      timestamp: new Date().toISOString(),
+      source: 'agent',
+      tool_call_id: 'call_1',
+      title: 'Read',
+      status: 'completed',
+      tool_kind: 'read',
+      raw_input: null,
+      raw_output: null,
+      content: null,
+      is_error: false,
+    };
+    const delta: StreamingDeltaEvent = {
+      id: generateEventId(),
+      kind: 'StreamingDeltaEvent',
+      timestamp: new Date().toISOString(),
+      source: 'agent',
+      content: 'hello',
+      reasoning_content: null,
+    };
+
+    expect(acp.tool_kind).toBe('read');
+    expect(delta.content).toBe('hello');
+  });
+
   describe('SystemPromptEvent', () => {
     it('should have correct structure', () => {
       const event: SystemPromptEvent = {
@@ -156,7 +225,7 @@ describe('Event Type Guards', () => {
         id: generateEventId(),
         kind: 'CondensationRequest',
         timestamp: new Date().toISOString(),
-        source: 'agent',
+        source: 'environment',
       };
 
       expect(event.kind).toBe('CondensationRequest');
@@ -167,7 +236,7 @@ describe('Event Type Guards', () => {
         id: generateEventId(),
         kind: 'CondensationSummaryEvent',
         timestamp: new Date().toISOString(),
-        source: 'agent',
+        source: 'environment',
         summary: 'Conversation summary here',
       };
 
@@ -268,11 +337,15 @@ describe('Event Structure', () => {
         action: {
           command: 'ls -la /workspace',
         },
-        thought: 'I need to list the workspace files',
+        thought: [{ type: 'text', text: 'I need to list the workspace files' }],
+        thinking_blocks: [],
+        tool_call: { id: 'call_123', name: 'terminal', arguments: '{}', origin: 'completion' },
+        llm_response_id: 'response_1',
+        security_risk: 'UNKNOWN',
       };
 
       expect(event.tool_name).toBe('terminal');
-      expect(event.action.command).toBe('ls -la /workspace');
+      expect(event.action?.command).toBe('ls -la /workspace');
       expect(event.thought).toBeDefined();
     });
   });

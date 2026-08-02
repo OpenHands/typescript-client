@@ -480,6 +480,7 @@ export interface RemoteMCPServerSpec {
   type: RemoteMCPServerType;
   url: string;
   headers?: Record<string, string>;
+  /** @deprecated Use the tagged `auth` credential instead. */
   api_key?: string | null;
   auth?: MCPAuthCredential | null;
   timeout?: number | null;
@@ -538,6 +539,12 @@ export interface MCPServer {
   keep_alive?: boolean | null;
   headers?: Record<string, string> | null;
   auth?: MCPAuthCredential | null;
+  /**
+   * Whether the server is exposed to the agent. A disabled server stays fully
+   * configured -- secrets included -- but is skipped when MCP tools are created
+   * and when servers are forwarded to an ACP subprocess. Defaults to true.
+   */
+  enabled?: boolean | null;
 }
 
 /** @deprecated Use `AgentServerMCPTestRequest["server"]` for MCP test payloads. */
@@ -582,6 +589,7 @@ export interface MCPTestFailure {
 /** @deprecated Use `AgentServerMCPTestResponse`. */
 export type MCPTestResponse = MCPTestSuccess | MCPTestFailure;
 
+/** @deprecated Use `AgentServerMCPStartOAuthResponse`. */
 export interface MCPOAuthStartResponse {
   ok: boolean;
   job_id?: string | null;
@@ -592,6 +600,7 @@ export interface MCPOAuthStartResponse {
 
 export type MCPOAuthProbeStatus = 'pending' | 'authorizing' | 'succeeded' | 'failed';
 
+/** @deprecated Use `AgentServerMCPOAuthStatusResponse`. */
 export interface MCPOAuthStatusResponse {
   ok: boolean;
   status: MCPOAuthProbeStatus;
@@ -605,6 +614,7 @@ export interface MCPOAuthStatusResponse {
   error_kind?: MCPTestFailureKind | null;
 }
 
+/** @deprecated Use `AgentServerMCPOAuthCallbackRequest`. */
 export interface MCPOAuthCallbackRequest {
   callback_url: string;
 }

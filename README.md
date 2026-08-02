@@ -59,6 +59,7 @@ release configured by `package.json` → `config.agentServerImage`.
 ```bash
 npm run generate:agent-server-api
 npm run check:agent-server-api
+npm run test:agent-server-api-tooling
 ```
 
 The generator downloads the matching SDK release's `openapi.json`. For older
@@ -69,6 +70,11 @@ SDK development, `AGENT_SERVER_OPENAPI_PATH=/path/to/openapi.json` can supply a
 local candidate contract while retaining the pinned image metadata in the
 generated file.
 
+Pinned PR CI is reproducible and required. A separate weekly
+`agent-server-sdk-main-audit` workflow exports the contract from one exact SDK
+`main` commit, records that SHA, and opens or updates an informational drift
+issue. Ordinary client PRs never generate from the moving SDK branch.
+
 ## Quick Start
 
 ### Start an AgentServer
@@ -76,7 +82,7 @@ generated file.
 You'll need an AgentServer running somewhere for the client to connect to. You can run one in docker:
 
 ```bash
-docker run -p 8000:8000 -p 8001:8001 \
+docker run -p 127.0.0.1:8000:8000 -p 127.0.0.1:8001:8001 \
   -e OH_ENABLE_VNC=false \
   -e SESSION_API_KEY="$SESSION_API_KEY" \
   -e OH_ALLOW_CORS_ORIGINS='["*"]' \
@@ -185,15 +191,19 @@ const acpCount = await manager.acp.countConversations();
 
 ### Updating MCP settings
 
-Persisted MCP servers use their settings-map key as stable identity. Add or
-update one server with a sparse patch instead of fetching and resending the
-whole catalog:
+Persisted MCP servers use their settings-map key as stable identity. Create,
+update, or delete one server without fetching and resending the whole catalog:
 
 ```typescript
 const settings = manager.settings;
 
-await settings.patchMcpServer('github', {
+await settings.createMcpServer('github', {
+  transport: 'http',
   url: 'https://example.test/mcp',
+});
+
+await settings.patchMcpServer('github', {
+  url: 'https://example.test/mcp/v2',
 });
 
 await settings.deleteMcpServer('old-server');
@@ -202,7 +212,7 @@ await settings.deleteMcpServer('old-server');
 An omitted patch field preserves its stored value, including credentials.
 Supplying a value replaces it, and `null` explicitly clears a supported
 optional field or deletes a map entry. Each helper sends one
-`PATCH /api/settings` request.
+request to the corresponding Agent Server MCP settings operation.
 
 If you need the lower-level endpoint-specific clients directly, import them from the secondary entrypoint:
 
@@ -463,14 +473,14 @@ Integration tests require a running agent-server in Docker with a mounted worksp
    chmod 777 /tmp/agent-workspace
    ```
 
-2. Start the agent-server container (software-agent-sdk v1.37.0):
+2. Start the agent-server container (software-agent-sdk v1.40.0):
 
    ```bash
    docker run -d \
      --name agent-server \
-     -p 8010:8000 \
+     -p 127.0.0.1:8010:8000 \
      -v /tmp/agent-workspace:/workspace \
-     ghcr.io/openhands/agent-server:1.37.0-python
+     ghcr.io/openhands/agent-server:1.40.0-python --host 0.0.0.0
    ```
 
 3. Wait for the server to be ready:

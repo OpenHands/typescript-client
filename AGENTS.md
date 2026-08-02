@@ -114,7 +114,6 @@ src/workspace/
 - `createWorkspace({ type, options })` - Explicit type selection
 - `createWorkspaceAuto(options)` - Auto-detect based on presence of `host` option
 
-
 **Ergonomic API note**: Keep `Workspace`/`RemoteWorkspace` as the main user-facing entry point for remote execution. Lower-level bash endpoint access should hang off `workspace.bash`, while direct endpoint-specific clients belong in the secondary `@openhands/typescript-client/clients` entrypoint instead of the root SDK surface.
 
 ### LLM Architecture
@@ -223,7 +222,6 @@ await conversation.close();
 **Factory Functions**:
 
 **Ergonomic API note**: Keep `ConversationManager` as the main server-scoped entry point. Server/LLM/settings/skills/tools/VSCode/desktop operations should be reachable through manager namespaces such as `manager.server`, `manager.llm`, and `manager.desktop`; ACP-specific operations should be reachable via `manager.acp`.
-
 
 - `createConversation({ type, agent, workspace, options })` - Explicit type selection
 - `createConversationAuto(agent, workspace, options)` - Auto-detect based on workspace type
@@ -337,7 +335,11 @@ The generated transport contract in
 `npm run check:agent-server-api` to enforce a clean regeneration. Released SDK
 versions use the `openapi.json` release artifact. Legacy releases without the
 artifact are exported from an isolated temporary container of the exact pinned
-image. The generator never reads from an unpinned `latest` endpoint.
+image. Run `npm run test:agent-server-api-tooling` when changing generation or
+drift automation. The scheduled `agent-server-sdk-main-audit` records the exact
+SDK commit it tests and reports upcoming drift informationally; ordinary PR CI
+never reads from that moving target. The generator never reads from an unpinned
+`latest` endpoint.
 
 ## Local Setup and Validation
 
@@ -384,10 +386,10 @@ Integration tests are in `src/__tests__/integration/` and require a running agen
 export LLM_API_KEY="your-api-key"
 export LLM_MODEL="anthropic/claude-sonnet-4-5-20250929"
 
-# Start agent-server in Docker (software-agent-sdk v1.37.0)
-docker run -d --name agent-server -p 8010:8000 \
+# Start agent-server in Docker (software-agent-sdk v1.40.0)
+docker run -d --name agent-server -p 127.0.0.1:8010:8000 \
   -v /tmp/agent-workspace:/workspace \
-  ghcr.io/openhands/agent-server:1.37.0-python
+  ghcr.io/openhands/agent-server:1.40.0-python --host 0.0.0.0
 
 # Run integration tests
 npm run test:integration
@@ -416,7 +418,7 @@ Required GitHub secrets:
 
 ### CI Image Version
 
-- The integration workflow pins `ghcr.io/openhands/agent-server:1.37.0-python`, which corresponds to the `software-agent-sdk` release `v1.37.0`.
+- The integration workflow pins `ghcr.io/openhands/agent-server:1.40.0-python`, which corresponds to the `software-agent-sdk` release `v1.40.0`.
 - Keep the TypeScript client tests strict against that released server image rather than adding compatibility fallbacks for older prerelease builds.
 
 ## Agent Behavior Guidelines
