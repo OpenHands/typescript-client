@@ -16,19 +16,19 @@
       },
       {
         "id": "opus[1m]",
-        "label": "Claude Opus 5 (1M)"
+        "label": "Claude Opus (1M)"
       },
       {
         "id": "claude-opus-5",
-        "label": "Claude Opus 5 (pinned)"
+        "label": "Claude Opus 5"
       },
       {
         "id": "sonnet",
-        "label": "Claude Sonnet 5"
+        "label": "Claude Sonnet"
       },
       {
         "id": "haiku",
-        "label": "Claude Haiku 4.5"
+        "label": "Claude Haiku"
       }
     ],
     "default_model": "opus[1m]",
