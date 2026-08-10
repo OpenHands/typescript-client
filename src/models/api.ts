@@ -55,6 +55,44 @@ export interface LLMSubscriptionModelsResponse {
   models: string[];
 }
 
+// ── Provider Connections (OpenHands/OpenHands#15492) ────────────────────
+//
+// A Provider Connection is the persisted record for "connect a vendor once
+// with one key, pick from its model catalog". The key is stored as a named
+// secret server-side; these responses never echo it (api_key_set only).
+
+export interface ProviderConnection {
+  id: string;
+  provider: string;
+  label?: string;
+  models: string[];
+  created_at: number;
+  last_validated_at?: number | null;
+  api_key_set: boolean;
+}
+
+export interface CreateConnectionRequest {
+  provider: string;
+  key: string;
+  label?: string;
+  models?: string[];
+}
+
+export interface UpdateConnectionRequest {
+  key?: string;
+  label?: string;
+  models?: string[];
+}
+
+export interface ValidateConnectionResponse {
+  id: string;
+  provider: string;
+  ok: boolean;
+  models: string[];
+  error?: string | null;
+  validated_at: number;
+}
+
 export interface SettingsSchema {
   model_name: string;
   sections: Array<Record<string, unknown>>;

@@ -1,11 +1,15 @@
 import { HttpClient } from './http-client';
 import {
+  CreateConnectionRequest,
   LLMSubscriptionDevicePollRequest,
   LLMSubscriptionDeviceStartResponse,
   LLMSubscriptionModelsResponse,
   LLMSubscriptionStatusResponse,
   ModelsResponse,
+  ProviderConnection,
   ProvidersResponse,
+  UpdateConnectionRequest,
+  ValidateConnectionResponse,
   VerifiedModelsResponse,
 } from '../models/api';
 
@@ -82,6 +86,61 @@ export class LLMMetadataClient {
   async logoutOpenAISubscription(): Promise<LLMSubscriptionStatusResponse> {
     const response = await this.client.post<LLMSubscriptionStatusResponse>(
       '/api/llm/subscription/openai/logout'
+    );
+    return response.data;
+  }
+
+  // ── Provider Connections (/api/llm/connections) ───────────────────────
+  //
+  // Connect a vendor once with one key, pick from its model catalog. The key is
+  // stored as a named secret server-side and never returned (api_key_set only).
+
+  async listConnections(): Promise<ProviderConnection[]> {
+    const response = await this.client.get<ProviderConnection[]>(
+      '/api/llm/connections'
+    );
+    return response.data;
+  }
+
+  async createConnection(
+    body: CreateConnectionRequest
+  ): Promise<ProviderConnection> {
+    const response = await this.client.post<ProviderConnection>(
+      '/api/llm/connections',
+      body
+    );
+    return response.data;
+  }
+
+  async getConnection(connectionId: string): Promise<ProviderConnection> {
+    const response = await this.client.get<ProviderConnection>(
+      `/api/llm/connections/${encodeURIComponent(connectionId)}`
+    );
+    return response.data;
+  }
+
+  async updateConnection(
+    connectionId: string,
+    body: UpdateConnectionRequest
+  ): Promise<ProviderConnection> {
+    const response = await this.client.patch<ProviderConnection>(
+      `/api/llm/connections/${encodeURIComponent(connectionId)}`,
+      body
+    );
+    return response.data;
+  }
+
+  async deleteConnection(connectionId: string): Promise<void> {
+    await this.client.delete(
+      `/api/llm/connections/${encodeURIComponent(connectionId)}`
+    );
+  }
+
+  async validateConnection(
+    connectionId: string
+  ): Promise<ValidateConnectionResponse> {
+    const response = await this.client.post<ValidateConnectionResponse>(
+      `/api/llm/connections/${encodeURIComponent(connectionId)}/validate`
     );
     return response.data;
   }

@@ -416,6 +416,10 @@ export type {
   MCPOAuthCallbackRequest,
   SharedConversation,
   EventPage as ApiEventPage,
+  ProviderConnection,
+  CreateConnectionRequest,
+  UpdateConnectionRequest,
+  ValidateConnectionResponse,
 } from './models/api';
 
 export type { WebSocketClientOptions } from './events/websocket-client';
