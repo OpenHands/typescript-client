@@ -7,10 +7,7 @@
  */
 
 import { LLMMetadataClient } from '../client/llm-client';
-import type {
-  ProviderConnection,
-  ValidateConnectionResponse,
-} from '../models/api';
+import type { ProviderConnection, ValidateConnectionResponse } from '../models/api';
 
 const originalFetch = global.fetch;
 
@@ -125,9 +122,7 @@ describe('LLMMetadataClient connections', () => {
     await client.updateConnection('abc', { label: 'work', models: ['gpt-4o'] });
     expect(calls[0].url).toBe('http://example.com/api/llm/connections/abc');
     expect(calls[0].init?.method).toBe('PATCH');
-    expect(calls[0].init?.body).toBe(
-      JSON.stringify({ label: 'work', models: ['gpt-4o'] })
-    );
+    expect(calls[0].init?.body).toBe(JSON.stringify({ label: 'work', models: ['gpt-4o'] }));
   });
 
   it('updateConnection can rotate the key', async () => {
@@ -139,13 +134,15 @@ describe('LLMMetadataClient connections', () => {
     expect(calls[0].init?.body).toBe(JSON.stringify({ key: 'sk-new' }));
   });
 
-  it('deleteConnection DELETEs {id} and resolves', async () => {
-    const { fetch, calls } = captureFetch();
-    global.fetch = fetch;
+  it('deleteConnection DELETEs {id} and returns affected profiles', async () => {
+    global.fetch = mockFetch({ id: 'abc', affected_profiles: ['work-gpt4o'] });
 
-    await expect(client.deleteConnection('abc')).resolves.toBeUndefined();
-    expect(calls[0].url).toBe('http://example.com/api/llm/connections/abc');
-    expect(calls[0].init?.method).toBe('DELETE');
+    const result = await client.deleteConnection('abc');
+    expect(result).toEqual({ id: 'abc', affected_profiles: ['work-gpt4o'] });
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://example.com/api/llm/connections/abc',
+      expect.objectContaining({ method: 'DELETE' })
+    );
   });
 
   it('validateConnection POSTs to {id}/validate and returns the response', async () => {
@@ -153,6 +150,7 @@ describe('LLMMetadataClient connections', () => {
       id: 'abc',
       provider: 'openai',
       ok: true,
+      verified: false,
       models: ['gpt-4o', 'gpt-4o-mini'],
       error: null,
       validated_at: 1700000200,
@@ -161,10 +159,45 @@ describe('LLMMetadataClient connections', () => {
 
     const result = await client.validateConnection('abc');
     expect(result).toEqual(validate);
+    expect(result.verified).toBe(false);
     expect(global.fetch).toHaveBeenCalledWith(
       'http://example.com/api/llm/connections/abc/validate',
       expect.objectContaining({ method: 'POST' })
     );
+  });
+
+  it('validateConnection forwards the live flag as a query param', async () => {
+    const { fetch, calls } = captureFetch();
+    global.fetch = fetch;
+
+    await client.validateConnection('abc', { live: true });
+    expect(calls[0].url).toBe('http://example.com/api/llm/connections/abc/validate?live=true');
+    expect(calls[0].init?.method).toBe('POST');
+  });
+
+  it('createProfileFromConnection POSTs the profile body to {id}/profiles', async () => {
+    const { fetch, calls } = captureFetch();
+    global.fetch = fetch;
+
+    await client.createProfileFromConnection('abc', {
+      profile_name: 'work-gpt4o',
+      model: 'gpt-4o',
+    });
+    expect(calls[0].url).toBe('http://example.com/api/llm/connections/abc/profiles');
+    expect(calls[0].init?.method).toBe('POST');
+    expect(calls[0].init?.body).toBe(
+      JSON.stringify({ profile_name: 'work-gpt4o', model: 'gpt-4o' })
+    );
+  });
+
+  it('surfaces a typed HttpError with the server body on a non-2xx response', async () => {
+    global.fetch = mockFetch({ detail: 'provider unknown' }, 400);
+
+    await expect(client.listConnections()).rejects.toMatchObject({
+      name: 'HttpError',
+      status: 400,
+      response: { detail: 'provider unknown' },
+    });
   });
 
   it('encodes the connection id in the path', async () => {
@@ -172,8 +205,6 @@ describe('LLMMetadataClient connections', () => {
     global.fetch = fetch;
 
     await client.getConnection('a/b c');
-    expect(calls[0].url).toBe(
-      'http://example.com/api/llm/connections/a%2Fb%20c'
-    );
+    expect(calls[0].url).toBe('http://example.com/api/llm/connections/a%2Fb%20c');
   });
 });

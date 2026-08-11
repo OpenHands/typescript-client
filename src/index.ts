@@ -420,6 +420,9 @@ export type {
   CreateConnectionRequest,
   UpdateConnectionRequest,
   ValidateConnectionResponse,
+  DisconnectConnectionResponse,
+  CreateProfileFromConnectionRequest,
+  ProfileFromConnectionResponse,
 } from './models/api';
 
 export type { WebSocketClientOptions } from './events/websocket-client';

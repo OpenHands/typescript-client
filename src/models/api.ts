@@ -88,9 +88,34 @@ export interface ValidateConnectionResponse {
   id: string;
   provider: string;
   ok: boolean;
+  /**
+   * True only when the key was checked against the provider over the network.
+   * When false, `models` is the provider's advertised catalog rather than a
+   * proven grant — clients must not present the key as authenticated.
+   */
+  verified: boolean;
   models: string[];
   error?: string | null;
   validated_at: number;
+}
+
+export interface DisconnectConnectionResponse {
+  id: string;
+  /** LLM profiles that referenced the deleted connection's key. */
+  affected_profiles: string[];
+}
+
+export interface CreateProfileFromConnectionRequest {
+  profile_name: string;
+  model: string;
+  base_url?: string | null;
+}
+
+export interface ProfileFromConnectionResponse {
+  profile_name: string;
+  model: string;
+  provider: string;
+  connection_id: string;
 }
 
 export interface SettingsSchema {

@@ -1,11 +1,14 @@
 import { HttpClient } from './http-client';
 import {
   CreateConnectionRequest,
+  CreateProfileFromConnectionRequest,
+  DisconnectConnectionResponse,
   LLMSubscriptionDevicePollRequest,
   LLMSubscriptionDeviceStartResponse,
   LLMSubscriptionModelsResponse,
   LLMSubscriptionStatusResponse,
   ModelsResponse,
+  ProfileFromConnectionResponse,
   ProviderConnection,
   ProvidersResponse,
   UpdateConnectionRequest,
@@ -96,19 +99,12 @@ export class LLMMetadataClient {
   // stored as a named secret server-side and never returned (api_key_set only).
 
   async listConnections(): Promise<ProviderConnection[]> {
-    const response = await this.client.get<ProviderConnection[]>(
-      '/api/llm/connections'
-    );
+    const response = await this.client.get<ProviderConnection[]>('/api/llm/connections');
     return response.data;
   }
 
-  async createConnection(
-    body: CreateConnectionRequest
-  ): Promise<ProviderConnection> {
-    const response = await this.client.post<ProviderConnection>(
-      '/api/llm/connections',
-      body
-    );
+  async createConnection(body: CreateConnectionRequest): Promise<ProviderConnection> {
+    const response = await this.client.post<ProviderConnection>('/api/llm/connections', body);
     return response.data;
   }
 
@@ -130,17 +126,45 @@ export class LLMMetadataClient {
     return response.data;
   }
 
-  async deleteConnection(connectionId: string): Promise<void> {
-    await this.client.delete(
+  /**
+   * Disconnect a connection. Returns the LLM profiles that referenced its key
+   * (they will need a new key before they can authenticate again).
+   */
+  async deleteConnection(connectionId: string): Promise<DisconnectConnectionResponse> {
+    const response = await this.client.delete<DisconnectConnectionResponse>(
       `/api/llm/connections/${encodeURIComponent(connectionId)}`
     );
+    return response.data;
   }
 
+  /**
+   * Validate a connection's key against its provider. Pass `live` to issue a
+   * real network probe; the response's `verified` flag reflects whether that
+   * happened (catalog-only validation returns `verified: false`).
+   */
   async validateConnection(
-    connectionId: string
+    connectionId: string,
+    options?: { live?: boolean }
   ): Promise<ValidateConnectionResponse> {
+    const query = options?.live ? '?live=true' : '';
     const response = await this.client.post<ValidateConnectionResponse>(
-      `/api/llm/connections/${encodeURIComponent(connectionId)}/validate`
+      `/api/llm/connections/${encodeURIComponent(connectionId)}/validate${query}`
+    );
+    return response.data;
+  }
+
+  /**
+   * Create an LLM profile bound to this connection's key. The profile stores an
+   * `api_key` reference to the connection's secret rather than the raw key, so
+   * rotating the connection updates every profile spawned from it.
+   */
+  async createProfileFromConnection(
+    connectionId: string,
+    body: CreateProfileFromConnectionRequest
+  ): Promise<ProfileFromConnectionResponse> {
+    const response = await this.client.post<ProfileFromConnectionResponse>(
+      `/api/llm/connections/${encodeURIComponent(connectionId)}/profiles`,
+      body
     );
     return response.data;
   }
