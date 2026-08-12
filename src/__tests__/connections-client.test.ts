@@ -58,6 +58,9 @@ describe('LLMMetadataClient connections', () => {
         id: 'abc',
         provider: 'openai',
         label: 'work',
+        base_url: 'https://proxy.example/v1',
+        api_mode: 'chat',
+        custom_headers: { 'X-Org': 'eng' },
         models: ['gpt-4o'],
         created_at: 1700000000,
         last_validated_at: 1700000100,
@@ -78,6 +81,9 @@ describe('LLMMetadataClient connections', () => {
     const created: ProviderConnection = {
       id: 'abc',
       provider: 'openai',
+      base_url: 'https://proxy.example/v1',
+      api_mode: 'responses',
+      custom_headers: { 'X-Org': 'eng' },
       models: [],
       created_at: 1700000000,
       api_key_set: true,
@@ -87,13 +93,22 @@ describe('LLMMetadataClient connections', () => {
     const result = await client.createConnection({
       provider: 'openai',
       key: 'sk-test',
+      base_url: 'https://proxy.example/v1',
+      api_mode: 'responses',
+      custom_headers: { 'X-Org': 'eng' },
     });
     expect(result).toEqual(created);
     expect(global.fetch).toHaveBeenCalledWith(
       'http://example.com/api/llm/connections',
       expect.objectContaining({
         method: 'POST',
-        body: JSON.stringify({ provider: 'openai', key: 'sk-test' }),
+        body: JSON.stringify({
+          provider: 'openai',
+          key: 'sk-test',
+          base_url: 'https://proxy.example/v1',
+          api_mode: 'responses',
+          custom_headers: { 'X-Org': 'eng' },
+        }),
       })
     );
   });
@@ -119,10 +134,24 @@ describe('LLMMetadataClient connections', () => {
     const { fetch, calls } = captureFetch();
     global.fetch = fetch;
 
-    await client.updateConnection('abc', { label: 'work', models: ['gpt-4o'] });
+    await client.updateConnection('abc', {
+      label: 'work',
+      base_url: 'https://proxy.example/v1',
+      api_mode: 'chat',
+      custom_headers: { 'X-Org': 'eng' },
+      models: ['gpt-4o'],
+    });
     expect(calls[0].url).toBe('http://example.com/api/llm/connections/abc');
     expect(calls[0].init?.method).toBe('PATCH');
-    expect(calls[0].init?.body).toBe(JSON.stringify({ label: 'work', models: ['gpt-4o'] }));
+    expect(calls[0].init?.body).toBe(
+      JSON.stringify({
+        label: 'work',
+        base_url: 'https://proxy.example/v1',
+        api_mode: 'chat',
+        custom_headers: { 'X-Org': 'eng' },
+        models: ['gpt-4o'],
+      })
+    );
   });
 
   it('updateConnection can rotate the key', async () => {

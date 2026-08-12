@@ -65,6 +65,9 @@ export interface ProviderConnection {
   id: string;
   provider: string;
   label?: string;
+  base_url?: string | null;
+  api_mode?: 'auto' | 'chat' | 'responses';
+  custom_headers?: Record<string, string>;
   models: string[];
   created_at: number;
   last_validated_at?: number | null;
@@ -75,12 +78,18 @@ export interface CreateConnectionRequest {
   provider: string;
   key: string;
   label?: string;
+  base_url?: string | null;
+  api_mode?: 'auto' | 'chat' | 'responses';
+  custom_headers?: Record<string, string>;
   models?: string[];
 }
 
 export interface UpdateConnectionRequest {
   key?: string;
   label?: string;
+  base_url?: string | null;
+  api_mode?: 'auto' | 'chat' | 'responses';
+  custom_headers?: Record<string, string>;
   models?: string[];
 }
 
