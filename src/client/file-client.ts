@@ -25,7 +25,7 @@ export class FileClient {
     this.apiKey = options.apiKey;
     this.client = new HttpClient({
       baseUrl: this.host,
-      apiKey: this.apiKey,
+      apiKey: options.apiKey,
       timeout: options.timeout || 60000,
     });
   }
@@ -94,6 +94,13 @@ export class FileClient {
 
   async uploadTextFile(text: string, destinationPath: string, fileName?: string): Promise<Success> {
     return this.uploadFile(text, destinationPath, fileName);
+  }
+
+  async createDirectory(path: string): Promise<Success> {
+    const response = await this.client.post<Success>('/api/file/create_directory', null, {
+      params: { path },
+    });
+    return response.data;
   }
 
   async downloadTrajectory(conversationId: string): Promise<Blob> {
