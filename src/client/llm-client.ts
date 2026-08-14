@@ -1,18 +1,16 @@
 import { HttpClient } from './http-client';
 import {
-  CreateConnectionRequest,
-  CreateProfileFromConnectionRequest,
-  DisconnectConnectionResponse,
+  CreateProviderRequest,
   LLMSubscriptionDevicePollRequest,
   LLMSubscriptionDeviceStartResponse,
   LLMSubscriptionModelsResponse,
   LLMSubscriptionStatusResponse,
+  ModelProvider,
   ModelsResponse,
-  ProfileFromConnectionResponse,
-  ProviderConnection,
+  ProviderModelPayload,
   ProvidersResponse,
-  UpdateConnectionRequest,
-  ValidateConnectionResponse,
+  TestProviderResponse,
+  UpdateProviderRequest,
   VerifiedModelsResponse,
 } from '../models/api';
 
@@ -93,78 +91,96 @@ export class LLMMetadataClient {
     return response.data;
   }
 
-  // ── Provider Connections (/api/llm/connections) ───────────────────────
+  // ── Model Providers (/api/llm/model-providers) ────────────────────────
   //
-  // Connect a vendor once with one key, pick from its model catalog. The key is
-  // stored as a named secret server-side and never returned (api_key_set only).
+  // Connect a provider once with one key, then manage its models under it
+  // (add / edit / remove). The key is held on the provider as a named secret
+  // server-side and never returned (only `api_key_set`; `secret_name` is never
+  // exposed). See software-agent-sdk#4455.
 
-  async listConnections(): Promise<ProviderConnection[]> {
-    const response = await this.client.get<ProviderConnection[]>('/api/llm/connections');
+  async listProviders(): Promise<ModelProvider[]> {
+    const response = await this.client.get<ModelProvider[]>('/api/llm/model-providers');
     return response.data;
   }
 
-  async createConnection(body: CreateConnectionRequest): Promise<ProviderConnection> {
-    const response = await this.client.post<ProviderConnection>('/api/llm/connections', body);
+  async createProvider(body: CreateProviderRequest): Promise<ModelProvider> {
+    const response = await this.client.post<ModelProvider>('/api/llm/model-providers', body);
     return response.data;
   }
 
-  async getConnection(connectionId: string): Promise<ProviderConnection> {
-    const response = await this.client.get<ProviderConnection>(
-      `/api/llm/connections/${encodeURIComponent(connectionId)}`
+  async getProvider(providerId: string): Promise<ModelProvider> {
+    const response = await this.client.get<ModelProvider>(
+      `/api/llm/model-providers/${encodeURIComponent(providerId)}`
     );
     return response.data;
   }
 
-  async updateConnection(
-    connectionId: string,
-    body: UpdateConnectionRequest
-  ): Promise<ProviderConnection> {
-    const response = await this.client.patch<ProviderConnection>(
-      `/api/llm/connections/${encodeURIComponent(connectionId)}`,
+  /** Update provider fields or rotate its key. Provide at least one field. */
+  async updateProvider(
+    providerId: string,
+    body: UpdateProviderRequest
+  ): Promise<ModelProvider> {
+    const response = await this.client.patch<ModelProvider>(
+      `/api/llm/model-providers/${encodeURIComponent(providerId)}`,
       body
     );
     return response.data;
   }
 
-  /**
-   * Disconnect a connection. Returns the LLM profiles that referenced its key
-   * (they will need a new key before they can authenticate again).
-   */
-  async deleteConnection(connectionId: string): Promise<DisconnectConnectionResponse> {
-    const response = await this.client.delete<DisconnectConnectionResponse>(
-      `/api/llm/connections/${encodeURIComponent(connectionId)}`
+  /** Remove a provider and its named secret. Returns the removed provider. */
+  async deleteProvider(providerId: string): Promise<ModelProvider> {
+    const response = await this.client.delete<ModelProvider>(
+      `/api/llm/model-providers/${encodeURIComponent(providerId)}`
     );
     return response.data;
   }
 
-  /**
-   * Validate a connection's key against its provider. Pass `live` to issue a
-   * real network probe; the response's `verified` flag reflects whether that
-   * happened (catalog-only validation returns `verified: false`).
-   */
-  async validateConnection(
-    connectionId: string,
-    options?: { live?: boolean }
-  ): Promise<ValidateConnectionResponse> {
-    const query = options?.live ? '?live=true' : '';
-    const response = await this.client.post<ValidateConnectionResponse>(
-      `/api/llm/connections/${encodeURIComponent(connectionId)}/validate${query}`
-    );
-    return response.data;
-  }
-
-  /**
-   * Create an LLM profile bound to this connection's key. The profile stores an
-   * `api_key` reference to the connection's secret rather than the raw key, so
-   * rotating the connection updates every profile spawned from it.
-   */
-  async createProfileFromConnection(
-    connectionId: string,
-    body: CreateProfileFromConnectionRequest
-  ): Promise<ProfileFromConnectionResponse> {
-    const response = await this.client.post<ProfileFromConnectionResponse>(
-      `/api/llm/connections/${encodeURIComponent(connectionId)}/profiles`,
+  /** Add a model under the provider. Returns the updated provider. */
+  async addProviderModel(
+    providerId: string,
+    body: ProviderModelPayload
+  ): Promise<ModelProvider> {
+    const response = await this.client.post<ModelProvider>(
+      `/api/llm/model-providers/${encodeURIComponent(providerId)}/models`,
       body
+    );
+    return response.data;
+  }
+
+  /** Rename a model and/or change its per-model wire-API override. */
+  async updateProviderModel(
+    providerId: string,
+    modelName: string,
+    body: ProviderModelPayload
+  ): Promise<ModelProvider> {
+    const response = await this.client.patch<ModelProvider>(
+      `/api/llm/model-providers/${encodeURIComponent(providerId)}/models/` +
+        `${encodeURIComponent(modelName)}`,
+      body
+    );
+    return response.data;
+  }
+
+  /** Remove a model from the provider. Returns the updated provider. */
+  async removeProviderModel(
+    providerId: string,
+    modelName: string
+  ): Promise<ModelProvider> {
+    const response = await this.client.delete<ModelProvider>(
+      `/api/llm/model-providers/${encodeURIComponent(providerId)}/models/` +
+        `${encodeURIComponent(modelName)}`
+    );
+    return response.data;
+  }
+
+  /**
+   * Probe the provider's stored key. `verified` reflects whether a real network
+   * check happened; `suggested_models` is a catalog convenience for the "add
+   * model" affordance and never mutates the curated model list.
+   */
+  async testProvider(providerId: string): Promise<TestProviderResponse> {
+    const response = await this.client.post<TestProviderResponse>(
+      `/api/llm/model-providers/${encodeURIComponent(providerId)}/test`
     );
     return response.data;
   }

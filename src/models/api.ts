@@ -55,76 +55,85 @@ export interface LLMSubscriptionModelsResponse {
   models: string[];
 }
 
-// ── Provider Connections (OpenHands/OpenHands#15492) ────────────────────
+// ── Model Providers (OpenHands/OpenHands#15492) ─────────────────────────
 //
-// A Provider Connection is the persisted record for "connect a vendor once
-// with one key, pick from its model catalog". The key is stored as a named
-// secret server-side; these responses never echo it (api_key_set only).
+// A model provider is the persisted record for "connect a provider once, then
+// manage its models under it". One key is held on the provider and shared by
+// every nested model. The key is stored as a named secret server-side; these
+// responses never echo it (only `api_key_set`), and never expose the internal
+// `secret_name`. Mirrors the agent-server contract at
+// `/api/llm/model-providers` (software-agent-sdk#4455).
 
-export interface ProviderConnection {
+/** Wire format a provider/model endpoint speaks. */
+export type WireApi = 'auto' | 'chat' | 'responses';
+
+/** A model nested under a provider. Inherits the provider's key/endpoint. */
+export interface ProviderModel {
+  name: string;
+  /** Optional per-model override of the provider's `wire_api`. */
+  wire_api?: WireApi | null;
+}
+
+/** Masked provider view — never includes the raw key or `secret_name`. */
+export interface ModelProvider {
   id: string;
-  provider: string;
-  label?: string;
+  display_name: string;
+  /** Preset id or litellm provider key, e.g. 'openai', 'anthropic', 'custom'. */
+  kind: string;
   base_url?: string | null;
-  api_mode?: 'auto' | 'chat' | 'responses';
-  custom_headers?: Record<string, string>;
-  models: string[];
+  wire_api: WireApi;
+  custom_headers: Record<string, string>;
+  models: ProviderModel[];
   created_at: number;
-  last_validated_at?: number | null;
+  updated_at: number;
+  /** True when a key is stored; the key itself is never returned. */
   api_key_set: boolean;
 }
 
-export interface CreateConnectionRequest {
-  provider: string;
+export interface CreateProviderRequest {
+  display_name: string;
+  kind?: string;
+  /** Written to the SecretsStore; never echoed back. */
   key: string;
-  label?: string;
   base_url?: string | null;
-  api_mode?: 'auto' | 'chat' | 'responses';
+  wire_api?: WireApi;
   custom_headers?: Record<string, string>;
-  models?: string[];
+  /** Optional models to seed the provider with. */
+  models?: ProviderModel[];
 }
 
-export interface UpdateConnectionRequest {
+/** Partial update. Provide at least one field. `key` rotates the named secret. */
+export interface UpdateProviderRequest {
+  display_name?: string;
+  kind?: string;
   key?: string;
-  label?: string;
   base_url?: string | null;
-  api_mode?: 'auto' | 'chat' | 'responses';
+  wire_api?: WireApi;
   custom_headers?: Record<string, string>;
-  models?: string[];
 }
 
-export interface ValidateConnectionResponse {
+/** Payload to add or edit a nested model. */
+export interface ProviderModelPayload {
+  name: string;
+  wire_api?: WireApi | null;
+}
+
+/**
+ * Result of probing a provider's stored key. Never mutates the curated model
+ * list — `suggested_models` is the provider's advertised catalog, offered only
+ * as a convenience for the "add model" affordance.
+ */
+export interface TestProviderResponse {
   id: string;
-  provider: string;
   ok: boolean;
   /**
-   * True only when the key was checked against the provider over the network.
-   * When false, `models` is the provider's advertised catalog rather than a
-   * proven grant — clients must not present the key as authenticated.
+   * True only when a live network probe confirmed the provider accepted the
+   * key. When false, `suggested_models` is a catalog rather than a proven
+   * grant — clients must not present the key as authenticated.
    */
   verified: boolean;
-  models: string[];
+  suggested_models: string[];
   error?: string | null;
-  validated_at: number;
-}
-
-export interface DisconnectConnectionResponse {
-  id: string;
-  /** LLM profiles that referenced the deleted connection's key. */
-  affected_profiles: string[];
-}
-
-export interface CreateProfileFromConnectionRequest {
-  profile_name: string;
-  model: string;
-  base_url?: string | null;
-}
-
-export interface ProfileFromConnectionResponse {
-  profile_name: string;
-  model: string;
-  provider: string;
-  connection_id: string;
 }
 
 export interface SettingsSchema {
