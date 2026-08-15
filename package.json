@@ -1,6 +1,6 @@
 {
   "name": "@openhands/typescript-client",
-  "version": "1.36.1",
+  "version": "1.38.0",
   "description": "TypeScript client for OpenHands Agent Server",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -47,7 +47,7 @@
     }
   },
   "config": {
-    "agentServerImage": "ghcr.io/openhands/agent-server:1.39.0-python"
+    "agentServerImage": "ghcr.io/openhands/agent-server:1.42.1-python"
   },
   "scripts": {
     "build": "tsc && node ./scripts/copy-json-assets.mjs && node ./scripts/rewrite-relative-imports.mjs",
@@ -85,13 +85,13 @@
   "author": "OpenHands Team",
   "license": "MIT",
   "dependencies": {
-    "@openrouter/sdk": "^0.13.24",
+    "@openrouter/sdk": "^1.2.11",
     "ws": "^8.20.0"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.29.5",
     "@eslint/js": "^10.0.1",
-    "@hey-api/openapi-ts": "0.95.0",
+    "@hey-api/openapi-ts": "0.99.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^26.1.0",
     "@types/ws": "^8.5.8",
