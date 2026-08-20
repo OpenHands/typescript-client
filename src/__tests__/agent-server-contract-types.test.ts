@@ -1,4 +1,5 @@
 import type { MCPClient } from '../client/mcp-client';
+import type { CreateConversationPayload } from '../client/conversation-client';
 import type { SettingsClient } from '../client/settings-client';
 import type {
   McpConfigPatchWritable,
@@ -50,6 +51,12 @@ function assertType<Type extends true>(_value: Type): void {
 }
 
 describe('Agent Server generated contract aliases', () => {
+  it('types the optional custom title-generation prompt', () => {
+    assertType<Equal<CreateConversationPayload['title_generation_prompt'], string | undefined>>(
+      true
+    );
+  });
+
   it('statically checks settings client request and response types', () => {
     assertType<
       Equal<Awaited<ReturnType<SettingsClient['getAgentSchema']>>, AgentServerSettingsSchema>
