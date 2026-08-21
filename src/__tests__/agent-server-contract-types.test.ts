@@ -52,9 +52,7 @@ function assertType<Type extends true>(_value: Type): void {
 
 describe('Agent Server generated contract aliases', () => {
   it('types the optional custom title-generation prompt', () => {
-    assertType<Equal<CreateConversationPayload['title_generation_prompt'], string | undefined>>(
-      true
-    );
+    assertType<Equal<CreateConversationPayload['prompt'], string | undefined>>(true);
   });
 
   it('statically checks settings client request and response types', () => {

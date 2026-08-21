@@ -43,7 +43,7 @@ export interface CreateConversationPayload {
   agent?: unknown;
   agent_settings?: unknown;
   /** Optional prompt override used for automatic conversation titles. */
-  title_generation_prompt?: string;
+  prompt?: string;
   [key: string]: unknown;
 }
 
