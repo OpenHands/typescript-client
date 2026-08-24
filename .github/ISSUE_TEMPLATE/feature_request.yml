@@ -1,0 +1,77 @@
+---
+name: Feature Request or Enhancement
+description: Suggest a new feature or improvement for the OpenHands Agent Server TypeScript client
+title: '[Feature]: '
+labels: [enhancement]
+body:
+    - type: markdown
+      attributes:
+          value: |
+              ## Thank you for suggesting a feature! 💡
+
+              Issues are evaluated for the `ready-for-dev` label automatically:
+              an enhancement is ready when it has a Desired Behavior section and
+              an Acceptance Criteria section with at least one checklist item.
+
+    - type: checkboxes
+      attributes:
+          label: Is there an existing feature request for this?
+          description: Please search existing issues and feature requests before creating a new one. If found, react or comment on the duplicate issue instead.
+          options:
+              - label: I have searched existing issues and feature requests, and this is not a duplicate.
+                required: true
+
+    - type: textarea
+      id: problem-statement
+      attributes:
+          label: Problem or Use Case
+          description: What problem are you trying to solve? What use case would this feature enable?
+          placeholder: Example - As a developer building a web UI on the agent-server API, I need typed access to conversation cost metrics so I can display usage to end users.
+      validations:
+          required: true
+
+    - type: textarea
+      id: desired-behavior
+      attributes:
+          label: Desired Behavior
+          description: Describe your ideal solution. What should this feature do? How should it work?
+          placeholder: Example - Expose a `conversation.getCostMetrics()` method returning a typed `CostMetrics` object mirroring the agent-server response.
+      validations:
+          required: true
+
+    - type: textarea
+      id: acceptance-criteria
+      attributes:
+          label: Acceptance Criteria
+          description: List the testable checklist item(s) that would prove this feature is complete.
+          placeholder: |
+              - [ ] The new method returns typed cost metrics from the agent-server
+              - [ ] Unit tests cover the new behavior
+      validations:
+          required: true
+
+    - type: textarea
+      id: alternatives
+      attributes:
+          label: Alternatives Considered
+          description: Have you considered any alternative solutions or workarounds? What are their limitations?
+          placeholder: Example - Calling the REST endpoint directly with fetch, but that loses the client's type safety and error handling.
+
+    - type: textarea
+      id: technical-details
+      attributes:
+          label: Technical Implementation Ideas (Optional)
+          description: If you have technical expertise, share implementation ideas, API suggestions, or relevant technical details.
+          placeholder: |
+              Example - Mirror the Python SDK's RemoteConversation cost API; the endpoint already exists in the OpenAPI spec at src/generated/agent-server-schema.ts.
+
+    - type: textarea
+      id: additional-context
+      attributes:
+          label: Additional Context
+          description: Add any other context, code examples, API mockups, or references that help illustrate this feature request.
+          placeholder: |
+              ```ts
+              const metrics = await conversation.getCostMetrics();
+              console.log(metrics.totalCostUsd);
+              ```
