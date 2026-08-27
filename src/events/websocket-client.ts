@@ -4,7 +4,8 @@
 
 import { Event, ConversationCallbackType } from '../types/base';
 
-// Use native WebSocket in browser, ws library in Node.js.
+// Prefer the standards-compatible global in browsers and modern Node.js,
+// falling back to ws where CommonJS require is available.
 //
 // IMPORTANT: this block must never throw. It runs whenever this file is
 // imported, and this file is transitively imported by the package barrel
@@ -15,11 +16,11 @@ import { Event, ConversationCallbackType } from '../types/base';
 // through the existing onError callback channel.
 let WebSocketImpl: any;
 
-if (typeof window !== 'undefined' && window.WebSocket) {
-  // Browser environment
-  WebSocketImpl = window.WebSocket;
+if (typeof globalThis.WebSocket !== 'undefined') {
+  // Browser or modern Node.js environment
+  WebSocketImpl = globalThis.WebSocket;
 } else {
-  // Node.js environment
+  // Older Node.js or another environment without a global WebSocket
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const ws = require('ws');

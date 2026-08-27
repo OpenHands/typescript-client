@@ -5,14 +5,16 @@
 import { BashEvent } from '../models/workspace';
 import { ErrorCallbackType } from './websocket-client';
 
+// Prefer the standards-compatible global in browsers and modern Node.js,
+// falling back to ws where CommonJS require is available.
 // IMPORTANT: this block must never throw. See the matching note in
 // `events/websocket-client.ts` — the "no WebSocket implementation"
 // condition is deferred to connect() time so importing this module does
 // not crash consumers that never use bash event streaming.
 let WebSocketImpl: any;
 
-if (typeof window !== 'undefined' && window.WebSocket) {
-  WebSocketImpl = window.WebSocket;
+if (typeof globalThis.WebSocket !== 'undefined') {
+  WebSocketImpl = globalThis.WebSocket;
 } else {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports

@@ -28,12 +28,20 @@ const WEBSOCKET_MODULES = [
 ] as const;
 
 const mockWsAsUnavailable = (): void => {
+  globalThis.WebSocket = undefined as unknown as typeof WebSocket;
   jest.doMock('ws', () => {
     throw new Error('ws is not available in this environment');
   });
 };
 
 describe('package imports do not crash when `ws` is unavailable', () => {
+  const originalWebSocket = globalThis.WebSocket;
+
+  afterEach(() => {
+    globalThis.WebSocket = originalWebSocket;
+    jest.resetModules();
+  });
+
   describe.each(WEBSOCKET_MODULES)('%s', (modulePath) => {
     it('does not throw at module load', () => {
       expect(() => {
@@ -129,4 +137,63 @@ describe('package imports do not crash when `ws` is unavailable', () => {
     expect(captured).toBeInstanceOf(Error);
     expect(captured?.message).toMatch(/WebSocket implementation not available/i);
   });
+});
+
+describe('modern Node.js WebSocket support', () => {
+  const originalWebSocket = globalThis.WebSocket;
+
+  afterEach(() => {
+    globalThis.WebSocket = originalWebSocket;
+    jest.resetModules();
+  });
+
+  it.each([
+    {
+      modulePath: '../events/websocket-client',
+      exportName: 'WebSocketCallbackClient',
+      options: {
+        host: 'http://example.com',
+        conversationId: 'conv-1',
+        callback: () => {},
+      },
+      expectedUrl: 'ws://example.com/sockets/events/conv-1',
+    },
+    {
+      modulePath: '../events/bash-websocket-client',
+      exportName: 'BashWebSocketClient',
+      options: {
+        host: 'http://example.com',
+        callback: () => {},
+      },
+      expectedUrl: 'ws://example.com/sockets/bash-events',
+    },
+  ])(
+    '$exportName uses globalThis.WebSocket',
+    ({ modulePath, exportName, options, expectedUrl }) => {
+      const urls: string[] = [];
+      class FakeWebSocket {
+        onopen?: () => void;
+        onmessage?: (event: { data: unknown }) => void;
+        onclose?: () => void;
+        onerror?: () => void;
+
+        constructor(url: string) {
+          urls.push(url);
+        }
+
+        close(): void {}
+      }
+      globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
+
+      jest.isolateModules(() => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const module = require(modulePath);
+        const client = new module[exportName](options);
+        client.start();
+        client.stop();
+      });
+
+      expect(urls).toEqual([expectedUrl]);
+    }
+  );
 });
