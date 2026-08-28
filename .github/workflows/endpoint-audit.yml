@@ -47,11 +47,19 @@ jobs:
           # .audit/ is a dot-directory; upload-artifact@v4 skips hidden paths by default.
           include-hidden-files: true
 
-      # Post the report as a single, self-updating comment on the PR. Runs even
-      # when the audit gate fails (the report is written before the gate), so
-      # reviewers see the mismatches that failed the check.
-      - name: Comment audit report on PR
-        if: always() && github.event_name == 'pull_request'
+      # Publish the report. It always lands in the job summary, and additionally
+      # as a single self-updating PR comment when the run's token can write one
+      # (same-repo pull requests). Runs even when the audit gate fails (the
+      # report is written before the gate), so reviewers see the mismatches that
+      # failed the check.
+      #
+      # A fork pull_request runs with a read-only token, so the comment POST
+      # returns 403 "Resource not accessible by integration". This step is
+      # `if: always()`, so an unguarded POST failed the whole check on every
+      # fork PR whatever the audit found. The guard lives in
+      # post-endpoint-audit-report.cjs; see canCommentOnPullRequest.
+      - name: Publish audit report
+        if: always()
         uses: actions/github-script@v7
         with:
           script: |

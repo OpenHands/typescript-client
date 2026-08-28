@@ -14,6 +14,50 @@ const { postEndpointAuditReport, renderEndpointAuditReport } = require(
 );
 const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'endpoint-audit-'));
 
+const summaryWrites = [];
+
+function fakeCore(overrides = {}) {
+  let buffer = '';
+  return {
+    warning: assert.fail,
+    info: () => {},
+    ...overrides,
+    summary: {
+      addRaw(text) {
+        buffer += text;
+        return this;
+      },
+      async write() {
+        summaryWrites.push(buffer);
+        buffer = '';
+        return this;
+      },
+    },
+  };
+}
+
+function sameRepoContext(number) {
+  return {
+    eventName: 'pull_request',
+    repo: { owner: 'OpenHands', repo: 'typescript-client' },
+    issue: { number },
+    payload: {
+      pull_request: { head: { repo: { full_name: 'OpenHands/typescript-client' } } },
+    },
+  };
+}
+
+function forkContext(number) {
+  return {
+    eventName: 'pull_request',
+    repo: { owner: 'OpenHands', repo: 'typescript-client' },
+    issue: { number },
+    payload: {
+      pull_request: { head: { repo: { full_name: 'georgeglarson/typescript-client' } } },
+    },
+  };
+}
+
 try {
   fs.mkdirSync(path.join(fixtureRoot, 'src/client'), { recursive: true });
 
@@ -112,8 +156,8 @@ try {
   let updatedComment;
   await postEndpointAuditReport({
     reportPath: path.join(fixtureRoot, '.audit/endpoint-audit.json'),
-    context: { repo: { owner: 'OpenHands', repo: 'typescript-client' }, issue: { number: 307 } },
-    core: { warning: assert.fail },
+    context: sameRepoContext(307),
+    core: fakeCore(),
     github: {
       paginate: async () => [{ id: 123, body: '<!-- endpoint-audit-report -->old' }],
       rest: {
@@ -131,6 +175,73 @@ try {
   assert.equal(updatedComment.repo, 'typescript-client');
   assert.equal(updatedComment.comment_id, 123);
   assert.equal(updatedComment.body, body);
+
+  assert(summaryWrites.length === 1, 'a same-repo PR still writes the job summary');
+  assert(summaryWrites[0].includes('Endpoint audit'), 'the summary carries the report');
+
+  // A fork PR gets a read-only GITHUB_TOKEN, so the comment POST 403s and takes
+  // the whole job red. Every fork PR fails this check regardless of content:
+  // OpenHands/typescript-client#320 sat 27 days on it and #362 hit the same
+  // wall on 2026-08-28. The report still has to reach a reviewer, so it goes to
+  // the job summary and the comment is skipped rather than attempted.
+  summaryWrites.length = 0;
+  const forkInfo = [];
+  await postEndpointAuditReport({
+    reportPath: path.join(fixtureRoot, '.audit/endpoint-audit.json'),
+    context: forkContext(362),
+    core: fakeCore({ info: (msg) => forkInfo.push(msg) }),
+    github: {
+      paginate: async () => assert.fail('a fork PR must not read comments'),
+      rest: {
+        issues: {
+          listComments: () => assert.fail('a fork PR must not read comments'),
+          updateComment: async () => assert.fail('a fork PR must not post a comment'),
+          createComment: async () => assert.fail('a fork PR must not post a comment'),
+        },
+      },
+    },
+  });
+  assert.equal(summaryWrites.length, 1, 'a fork PR still writes the job summary');
+  assert(summaryWrites[0].includes('Endpoint audit'), 'the fork summary carries the report');
+  assert(
+    forkInfo.some((msg) => msg.includes('fork')),
+    'the skip is announced, not silent'
+  );
+
+  // A push event has no PR to comment on at all (context.issue.number is
+  // undefined there), so the same guard covers it.
+  summaryWrites.length = 0;
+  await postEndpointAuditReport({
+    reportPath: path.join(fixtureRoot, '.audit/endpoint-audit.json'),
+    context: { eventName: 'push', repo: { owner: 'OpenHands', repo: 'typescript-client' } },
+    core: fakeCore(),
+    github: {
+      paginate: async () => assert.fail('a push event must not read comments'),
+      rest: {
+        issues: {
+          listComments: () => assert.fail('a push event must not read comments'),
+          updateComment: async () => assert.fail('a push event must not post a comment'),
+          createComment: async () => assert.fail('a push event must not post a comment'),
+        },
+      },
+    },
+  });
+  assert.equal(summaryWrites.length, 1, 'a push run still writes the job summary');
+
+  // A missing report is still a warning with nothing published.
+  summaryWrites.length = 0;
+  const warnings = [];
+  await postEndpointAuditReport({
+    reportPath: path.join(fixtureRoot, '.audit/does-not-exist.json'),
+    context: sameRepoContext(307),
+    core: fakeCore({ warning: (msg) => warnings.push(msg) }),
+    github: {
+      paginate: async () => assert.fail('a missing report must not read comments'),
+      rest: { issues: { listComments: () => assert.fail('no report, no comment') } },
+    },
+  });
+  assert.equal(summaryWrites.length, 0, 'no report means no summary');
+  assert.equal(warnings.length, 1, 'a missing report warns');
 
   console.log('endpoint-audit tooling test passed');
 } finally {
