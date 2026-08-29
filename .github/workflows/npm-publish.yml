@@ -38,18 +38,20 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      # Trusted publishing requires Node 22.14.0+ and npm 11.5.1+
+      # Trusted publishing requires npm 11.5.1+
       # See: https://docs.npmjs.com/trusted-publishers/
       - name: Set up Node.js for npm trusted publishing
         uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version-file: .nvmrc
           cache: npm
           registry-url: https://registry.npmjs.org
 
-      # Node 22 bundles npm 10.x, but trusted publishing (OIDC) needs npm
-      # 11.5.1+. setup-node does not upgrade the bundled npm, so do it
-      # explicitly — without this the version guard below always fails.
+      # The bundled npm is not reliably new enough: Node 24.0.0 shipped npm
+      # 11.3.0, below the 11.5.1 that trusted publishing (OIDC) needs, and
+      # .nvmrc floats across the 24.x line. setup-node does not upgrade the
+      # bundled npm, so do it explicitly. Without this the version guard
+      # below fails on any runner that resolves to an early enough 24.x.
       - name: Upgrade npm for trusted publishing
         run: npm install -g npm@latest
 
