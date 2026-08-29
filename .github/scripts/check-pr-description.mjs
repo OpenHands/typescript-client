@@ -36,7 +36,7 @@ const READY_FOR_DEV_LABEL = 'ready-for-dev';
 // rollout/deployment day (2026-08-24), so every issue predating deployment —
 // including ones opened earlier that same day, before the workflow existed —
 // is exempt. Issues created on or after 2026-08-25 must carry the label.
-const READY_FOR_DEV_ROLLOUT_ISO = '2026-08-25';
+const READY_FOR_DEV_ROLLOUT_ISO = process.env.READY_FOR_DEV_ROLLOUT_ISO ?? '2026-08-30';
 
 const API_ROOT = process.env.GITHUB_API_URL ?? 'https://api.github.com';
 
@@ -104,9 +104,13 @@ export async function validateLinkedIssueReady(body, repo, token) {
 
   const checked = [];
   const notReadyNew = [];
+  const missing = [];
   for (const number of numbers) {
     const details = await fetchIssueDetails(repo, number, token);
-    if (details === null) continue;
+    if (details === null) {
+      missing.push(number);
+      continue;
+    }
     checked.push(number);
     if (details.labels.some((label) => label.toLowerCase() === READY_FOR_DEV_LABEL)) {
       continue;
@@ -118,8 +122,8 @@ export async function validateLinkedIssueReady(body, repo, token) {
     notReadyNew.push(number);
   }
 
-  if (checked.length === 0) {
-    const refs = numbers.map((number) => `#${number}`).join(', ');
+  if (missing.length > 0) {
+    const refs = missing.map((number) => `#${number}`).join(', ');
     return [`Referenced issue(s) ${refs} could not be found in this repository.`];
   }
   if (notReadyNew.length > 0) {
